@@ -29,6 +29,32 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Lucene -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>6.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analyzers-common</artifactId>
+            <version>6.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>6.0.1</version>
+        </dependency>
+
+
+
+        <dependency>
+            <groupId>com.github.carboni</groupId>
+            <artifactId>argonaut</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+
         <!-- Commons -->
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -76,13 +102,6 @@
             <version>2.5</version>
         </dependency>
         -->
-
-        <!-- Elasticsearch -->
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch</artifactId>
-            <version>2.3.3</version>
-        </dependency>
 
     </dependencies>
 
