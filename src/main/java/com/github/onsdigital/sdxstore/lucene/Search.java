@@ -3,7 +3,7 @@ package com.github.onsdigital.sdxstore.lucene;
 
 import com.github.onsdigital.sdxstore.api.ResultData;
 import com.github.onsdigital.sdxstore.api.ResultList;
-import com.github.onsdigital.sdxstore.json.Json;
+import com.github.onsdigital.sdxstore.json.Argonaut;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
@@ -51,7 +51,7 @@ public class Search {
                 Document document = indexSearcher.doc(scoreDoc.doc);
                 resultData.addedDate = document.get(SdxStore.addedDate);
                 resultData.addedMs = document.get(SdxStore.addedMs);
-                resultData.surveyResponse = Json.parse(document.get(SdxStore.surveyResponse));
+                resultData.surveyResponse = Argonaut.parse(document.get(SdxStore.surveyResponse));
                 resultList.results.add(resultData);
             }
 
