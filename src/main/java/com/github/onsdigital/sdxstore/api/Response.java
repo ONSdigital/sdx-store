@@ -5,7 +5,7 @@ import com.github.davidcarboni.restolino.helpers.QueryString;
 import com.github.onsdigital.sdxstore.json.Json;
 import com.github.onsdigital.sdxstore.lucene.SdxStore;
 import com.github.onsdigital.sdxstore.lucene.Search;
-import com.github.onsdigital.sdxstore.lucene.Store;
+import com.github.onsdigital.sdxstore.lucene.Index;
 import com.google.gson.JsonElement;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,7 +26,7 @@ public class Response {
     @POST
     public void store(HttpServletRequest request, HttpServletResponse response) throws IOException {
         JsonElement surveyResponse = Json.parse(request.getInputStream());
-        Store.add(surveyResponse);
+        Index.add(surveyResponse);
     }
 
     @GET

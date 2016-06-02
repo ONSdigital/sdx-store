@@ -14,13 +14,13 @@ import static com.github.onsdigital.sdxstore.lucene.SdxStore.*;
 /**
  * Stores Json.
  */
-public class Store {
+public class Index {
 
-    private static Store instance;
+    private static Index instance;
 
     public static void add(JsonElement surveyResponse) throws IOException {
         if (instance == null) {
-            instance = new Store();
+            instance = new Index();
         }
         instance.index(surveyResponse);
     }
