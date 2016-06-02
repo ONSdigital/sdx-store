@@ -49,9 +49,9 @@
 
 
         <dependency>
-            <groupId>com.github.carboni</groupId>
-            <artifactId>argonaut</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <groupId>com.github.davidcarboni</groupId>
+            <artifactId>resource-utils</artifactId>
+            <version>1.2.2</version>
         </dependency>
 
 
