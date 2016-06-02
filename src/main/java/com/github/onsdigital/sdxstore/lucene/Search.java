@@ -1,6 +1,7 @@
-package com.github.onsdigital.sdxstore.api;
+package com.github.onsdigital.sdxstore.lucene;
 
 
+import com.google.gson.JsonElement;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -10,22 +11,19 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
+import org.apache.lucene.queryparser.xml.builders.TermQueryBuilder;
+import org.apache.lucene.util.QueryBuilder;
+import org.apache.lucene.queryparser.xml.QueryBuilderFactory;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Date;
 
-import static com.github.onsdigital.sdxstore.api.SdxStore.*;
+import static com.github.onsdigital.sdxstore.lucene.SdxStore.*;
 import static org.apache.lucene.index.IndexWriterConfig.OpenMode.CREATE_OR_APPEND;
 
 
@@ -33,6 +31,10 @@ import static org.apache.lucene.index.IndexWriterConfig.OpenMode.CREATE_OR_APPEN
  * Created by david on 27/05/6.
  */
 public class Search {
+
+    public static JsonElement get() {
+        return null;
+    }
 
 
     /**
@@ -47,6 +49,10 @@ public class Search {
             String q = "surveyId:\"023\" AND ruRef:\"1234567890\"";
 
             QueryParser parser = new QueryParser("ruRef", analyzer);
+            QueryBuilder builder = new QueryBuilder(analyzer);
+            Query booleanQuery = builder.createBooleanQuery(SdxStore.ruRef, QueryParserUtil.escape("1234567890"));
+            //new TermQueryBuilder().
+            //booleanQuery..
 
             Query query = parser.parse("1234567890");
             System.out.println("Searching for: " + query.toString("ruRef"));
@@ -80,7 +86,7 @@ public class Search {
         print(surveyId, document);
         print(formType, document);
         print(ruRef, document);
-        print(json, document);
+        print(response, document);
         print(addedDate, document);
 
     }
