@@ -1,140 +1,101 @@
 package com.github.onsdigital.sdxstore.lucene;
 
 
-import com.google.gson.JsonElement;
+import com.github.onsdigital.sdxstore.api.ResultData;
+import com.github.onsdigital.sdxstore.api.ResultList;
+import com.github.onsdigital.sdxstore.json.Json;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.*;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
-import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
-import org.apache.lucene.queryparser.xml.builders.TermQueryBuilder;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.search.*;
-import org.apache.lucene.util.QueryBuilder;
-import org.apache.lucene.queryparser.xml.QueryBuilderFactory;
-import org.apache.lucene.store.Directory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.github.onsdigital.sdxstore.lucene.SdxStore.*;
-import static org.apache.lucene.index.IndexWriterConfig.OpenMode.CREATE_OR_APPEND;
 
 
 /**
- * Created by david on 27/05/6.
+ * Searches for survey responses in the SDX store.
  */
 public class Search {
 
-    public static JsonElement get(String surveyId, String formType, String ruRef, String period, String addedMs) {
+    public static final int MAX_RESULTS = 100;
+
+    /**
+     * Gets up to {@value #MAX_RESULTS} results. All parameters can be null, depending on how you want to filter the search.
+     * TODO: this will need to be increased pretty soon. We can probably repeat the search using the highest added date.
+     *
+     * @param surveyId The survey ID.
+     * @param formType The form type.
+     * @param ruRef    The Reference Unit.
+     * @param period   The survey period.
+     * @param addedMs  The date to search from, in milliseconds.
+     * @return The result of calling {@link IndexSearcher#search(Query, int)}.
+     * @throws IOException If an {@link IndexSearcher} operation falis.
+     */
+    public static ResultList get(String surveyId, String formType, String ruRef, String period, String addedMs) throws IOException {
+
+        // Search
+        IndexSearcher indexSearcher = SdxStore.indexSearcher();
+        Query query = buildQuery(surveyId, formType, ruRef, period, addedMs);
+        System.out.println("Searching for: " + query.toString());
+        TopDocs topDocs = indexSearcher.search(query, MAX_RESULTS);
+
+        // Results
+        ResultList resultList = new ResultList();
+        resultList.totalHits = topDocs.totalHits;
+        ScoreDoc[] scoreDocs = topDocs.scoreDocs;
+        for (ScoreDoc scoreDoc : scoreDocs) {
+            ResultData resultData = new ResultData();
+            Document document = indexSearcher.doc(scoreDoc.doc);
+            resultData.addedDate = document.get(SdxStore.addedDate);
+            resultData.addedMs = document.get(SdxStore.addedMs);
+            resultData.response = Json.parse(document.get(SdxStore.response));
+            resultList.results.add(resultData);
+        }
+
+        return resultList;
+    }
+
+    /**
+     * Builds a search query from the given values, which can be null.
+     * @param surveyId The survey ID.
+     * @param formType The form type.
+     * @param ruRef    The Reference Unit.
+     * @param period   The survey period.
+     * @param addedMs  The date to search from, in milliseconds.
+     * @return A query specifying that all non-blank values must be present and that the {@code addedMs} must be
+     * greater than or equal to the given value (if present).
+     */
+    private static Query buildQuery(String surveyId, String formType, String ruRef, String period, String addedMs) {
 
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
 
         // Add the specified search terms
-        add(SdxStore.surveyId, surveyId, builder);
-        add(SdxStore.formType, formType, builder);
-        add(SdxStore.ruRef, ruRef, builder);
-        add(SdxStore.period, period, builder);
+        addField(SdxStore.surveyId, surveyId, builder);
+        addField(SdxStore.formType, formType, builder);
+        addField(SdxStore.ruRef, ruRef, builder);
+        addField(SdxStore.period, period, builder);
 
         // Add the "since" filter, if specified
         if (StringUtils.isNumeric(period)) {
-            TermRangeQuery rangeQuery = TermRangeQuery.newStringRange(SdxStore.addedMs, addedMs, "*", true, false);
+            TermRangeQuery rangeQuery = TermRangeQuery.newStringRange(SdxStore.addedMs, addedMs, "*", true, true);
             builder.add(rangeQuery, BooleanClause.Occur.MUST);
         }
 
-
-        return null;
+        return builder.build();
     }
 
     /**
      * Adds a {@link TermQuery} to the given {@link BooleanQuery.Builder}.
-     * @param name The field name.
-     * @param value The search term.
+     *
+     * @param name    The field name.
+     * @param value   The search term.
      * @param builder The builder to add to.
      */
-    private static void add(String name, String value, BooleanQuery.Builder builder) {
+    private static void addField(String name, String value, BooleanQuery.Builder builder) {
         if (StringUtils.isNotBlank(value)) {
             TermQuery termQuery = new TermQuery(new Term(name, value));
             builder.add(termQuery, BooleanClause.Occur.MUST);
         }
     }
 
-
-    /**
-     * Simple command-line based search demo.
-     */
-    public static void main(String[] args) throws IOException, ParseException {
-
-        try (IndexReader reader = DirectoryReader.open(SdxStore.directory())) {
-            IndexSearcher searcher = new IndexSearcher(reader);
-            Analyzer analyzer = new StandardAnalyzer();
-
-            String q = "surveyId:\"023\" AND ruRef:\"1234567890\"";
-
-            QueryParser parser = new QueryParser("ruRef", analyzer);
-            QueryBuilder builder = new QueryBuilder(analyzer);
-            Query booleanQuery = builder.createBooleanQuery(SdxStore.ruRef, QueryParserUtil.escape("1234567890"));
-            //new TermQueryBuilder().
-            //booleanQuery..
-
-            Query query = parser.parse("1234567890");
-            System.out.println("Searching for: " + query.toString("ruRef"));
-
-            result(searcher, query);
-        }
-    }
-
-    /**
-     * This demonstrates a typical paging search scenario, where the search engine presents
-     * pages of size n to the user. The user can then go to the next page if interested in
-     * the next hits.
-     * <p>
-     * When the query is executed for the first time, then only enough results are collected
-     * to fill 5 result pages. If the user wants to page beyond this limit, then the query
-     * is executed another time and all hits are collected.
-     */
-    public static void result(IndexSearcher searcher, Query query) throws IOException {
-
-        // Collect enough docs to show 5 pages
-        TopDocs results = searcher.search(query, 5);
-        ScoreDoc[] hits = results.scoreDocs;
-
-        int numTotalHits = results.totalHits;
-        System.out.println(numTotalHits + " total matching documents");
-
-        int hit = 0;
-
-        Document document = searcher.doc(hits[hit].doc);
-        System.out.println(hit + 1);
-        print(surveyId, document);
-        print(formType, document);
-        print(ruRef, document);
-        print(response, document);
-        print(addedDate, document);
-
-    }
-
-    static void print(String fieldName, Document document) {
-
-        String value = document.get(fieldName);
-        if (value != null) {
-            System.out.println("   " + fieldName + ": " + value);
-        }
-    }
-
-
-    static IndexWriter indexWriter() throws IOException {
-
-        Directory dir = SdxStore.directory();
-
-        Analyzer analyzer = new StandardAnalyzer();
-        IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-        iwc.setOpenMode(CREATE_OR_APPEND);
-
-        return new IndexWriter(dir, iwc);
-    }
 }

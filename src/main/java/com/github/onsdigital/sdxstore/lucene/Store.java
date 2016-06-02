@@ -52,7 +52,7 @@ public class Store {
 
         // Added date in searchable and viewable formats - rudimentary metadata.
         Date date = new Date();
-        document.add(new LongPoint(addedMs, date.getTime()));
+        document.add(new StringField(addedMs, String.valueOf(date.getTime()), Field.Store.YES));
         document.add(new StringField(addedDate, date.toString(), Field.Store.YES));
 
         return document;

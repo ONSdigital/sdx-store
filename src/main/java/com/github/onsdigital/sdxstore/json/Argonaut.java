@@ -1,7 +1,5 @@
 package com.github.onsdigital.sdxstore.json;
 
-import com.github.davidcarboni.argonaut.Keys;
-import com.github.davidcarboni.argonaut.Values;
 import com.google.gson.JsonElement;
 
 import java.util.Map;
@@ -12,7 +10,7 @@ import java.util.Map;
 public class Argonaut {
 
     JsonElement json;
-    com.github.davidcarboni.argonaut.Keys keys = new Keys();
+    Keys keys = new Keys();
     Values values = new Values();
     Map<String, Class<? extends JsonElement>> paths;
 

@@ -23,19 +23,19 @@ import static org.apache.lucene.index.IndexWriterConfig.OpenMode.CREATE_OR_APPEN
 public class SdxStore {
 
     /** Fields used to select a set of survey responses. */
-    public static String surveyId = "surveyId";
-    public static String formType = "formType";
-    public static String ruRef = "ruRef";
-    public static String period = "period";
+    public static final String surveyId = "surveyId";
+    public static final String formType = "formType";
+    public static final String ruRef = "ruRef";
+    public static final String period = "period";
 
     /** Field used to store the original survey response Json. */
-    static String response = "response";
+    public static final String response = "response";
 
     /** Metadata fields. For both searching and viewing. */
-    static String addedMs = "addedMs";
-    static String addedDate = "addedDate";
+    public static final String addedMs = "addedMs";
+    public static final String addedDate = "addedDate";
 
-    private static IndexReader indexReader;
+    private static DirectoryReader indexReader;
     private static IndexWriter indexWriter;
 
     private static Directory dir;
@@ -67,7 +67,7 @@ public class SdxStore {
         if (indexReader == null) {
 
             // Use a near-realtime IndexReader so we get to see updates to the index
-            indexReader = DirectoryReader.open(indexWriter());
+            indexReader =  DirectoryReader.open(indexWriter());
 
             // Shutdown hook for indexReader
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -85,6 +85,7 @@ public class SdxStore {
             }));
         }
 
+        //DirectoryReader reopened = DirectoryReader.openIfChanged(indexReader);
         return new IndexSearcher(indexReader);
     }
 
