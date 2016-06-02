@@ -6,6 +6,7 @@ import com.github.onsdigital.sdxstore.api.ResultList;
 import com.github.onsdigital.sdxstore.json.Json;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.*;
 
@@ -34,25 +35,27 @@ public class Search {
     public static ResultList get(String surveyId, String formType, String ruRef, String period, String addedMs) throws IOException {
 
         // Search
-        IndexSearcher indexSearcher = SdxStore.indexSearcher();
-        Query query = buildQuery(surveyId, formType, ruRef, period, addedMs);
-        System.out.println("Searching for: " + query.toString());
-        TopDocs topDocs = indexSearcher.search(query, MAX_RESULTS);
+        try (IndexReader indexReader = SdxStore.indexReader()) {
+            IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+            Query query = buildQuery(surveyId, formType, ruRef, period, addedMs);
+            System.out.println("Searching for: " + query.toString());
+            TopDocs topDocs = indexSearcher.search(query, MAX_RESULTS);
 
-        // Results
-        ResultList resultList = new ResultList();
-        resultList.totalHits = topDocs.totalHits;
-        ScoreDoc[] scoreDocs = topDocs.scoreDocs;
-        for (ScoreDoc scoreDoc : scoreDocs) {
-            ResultData resultData = new ResultData();
-            Document document = indexSearcher.doc(scoreDoc.doc);
-            resultData.addedDate = document.get(SdxStore.addedDate);
-            resultData.addedMs = document.get(SdxStore.addedMs);
-            resultData.response = Json.parse(document.get(SdxStore.response));
-            resultList.results.add(resultData);
+            // Results
+            ResultList resultList = new ResultList();
+            resultList.totalHits = topDocs.totalHits;
+            ScoreDoc[] scoreDocs = topDocs.scoreDocs;
+            for (ScoreDoc scoreDoc : scoreDocs) {
+                ResultData resultData = new ResultData();
+                Document document = indexSearcher.doc(scoreDoc.doc);
+                resultData.addedDate = document.get(SdxStore.addedDate);
+                resultData.addedMs = document.get(SdxStore.addedMs);
+                resultData.response = Json.parse(document.get(SdxStore.response));
+                resultList.results.add(resultData);
+            }
+
+            return resultList;
         }
-
-        return resultList;
     }
 
     /**

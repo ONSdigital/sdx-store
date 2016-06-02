@@ -85,8 +85,24 @@ public class SdxStore {
             }));
         }
 
-        //DirectoryReader reopened = DirectoryReader.openIfChanged(indexReader);
-        return new IndexSearcher(indexReader);
+        // Updates don't seem to be visible, so open a new one regardless for now:
+        return new IndexSearcher(DirectoryReader.open(indexWriter()));
+        //return new IndexSearcher(indexReader);
+    }
+
+    /**
+     * Lazily instantiates a singleton {@link IndexReader} if needed (the Lucene docs make it clear that this class is threadsafe)
+     * A new {@link IndexSearcher} is instantiated on every call which, according to the documentation, is a relatively cheap operation.
+     * <p>
+     * NB There's a small chance of more than one {@link IndexReader} being created, but this isn't an issue for our purposes.
+     *
+     * @return A new {@link IndexSearcher}.
+     * @throws IOException If an error occurs in opening the {@link IndexReader} or in calling {@link #indexWriter()}.
+     */
+    static IndexReader indexReader() throws IOException {
+
+        // Updates don't seem to be visible, so open a new one regardless for now:
+        return DirectoryReader.open(indexWriter());
     }
 
     /**
