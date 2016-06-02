@@ -18,15 +18,15 @@ public class Store {
 
     private static Store instance;
 
-    public static void add(JsonElement json) throws IOException {
+    public static void add(JsonElement surveyResponse) throws IOException {
         if (instance == null) {
             instance = new Store();
         }
-        instance.index(json);
+        instance.index(surveyResponse);
     }
 
-    void index(JsonElement json) throws IOException {
-        Document document = document(json);
+    void index(JsonElement surveyResponse) throws IOException {
+        Document document = document(surveyResponse);
         IndexWriter indexWriter = SdxStore.indexWriter();
         indexWriter.addDocument(document);
         indexWriter.commit();
@@ -35,20 +35,20 @@ public class Store {
     /**
      * Creates a new Lucene {@link Document} to store the Json survey response.
      *
-     * @param json The Json to be stored.
+     * @param surveyResponse The survey response Json to be stored.
      * @return A {@link Document} containing the Json.
      */
-    Document document(JsonElement json) {
+    Document document(JsonElement surveyResponse) {
         Document document = new Document();
-        Json argonaut = new Json(json);
+        Json json = new Json(surveyResponse);
 
         // Identifying coordinates
-        addField(document, surveyId, argonaut);
-        addField(document, formType, argonaut);
-        addField(document, ruRef, argonaut);
+        addField(document, surveyId, json);
+        addField(document, formType, json);
+        addField(document, ruRef, json);
 
         // Json survey response
-        document.add(new TextField(SdxStore.surveyResponse, json.toString(), Field.Store.YES));
+        document.add(new TextField(SdxStore.surveyResponse, surveyResponse.toString(), Field.Store.YES));
 
         // Added date in searchable and viewable formats - rudimentary metadata.
         Date date = new Date();

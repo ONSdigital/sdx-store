@@ -25,8 +25,8 @@ public class Response {
 
     @POST
     public void store(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        JsonElement json = Json.parse(request.getInputStream());
-        Store.add(json);
+        JsonElement surveyResponse = Json.parse(request.getInputStream());
+        Store.add(surveyResponse);
     }
 
     @GET
