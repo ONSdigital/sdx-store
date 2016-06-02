@@ -8,12 +8,12 @@ import com.google.gson.JsonElement;
 public class ResultData {
 
     /** The stored Json of the survey response. */
-    public JsonElement response;
+    public JsonElement surveyResponse;
 
-    /** The readable date that this response was stored. */
+    /** The readable date that this survey response was stored. */
     public String addedDate;
 
-    /** The searchable date that this response was stored. */
+    /** The searchable date that this survey response was stored. */
     public String addedMs;
 
 }

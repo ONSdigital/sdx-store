@@ -29,7 +29,7 @@ public class SdxStore {
     public static final String period = "period";
 
     /** Field used to store the original survey response Json. */
-    public static final String response = "response";
+    public static final String surveyResponse = "surveyResponse";
 
     /** Metadata fields. For both searching and viewing. */
     public static final String addedMs = "addedMs";

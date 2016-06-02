@@ -22,7 +22,8 @@ public class Search {
 
     /**
      * Gets up to {@value #MAX_RESULTS} results. All parameters can be null, depending on how you want to filter the search.
-     * TODO: this will need to be increased pretty soon. We can probably repeat the search using the highest added date.
+     * TODO: this will need to be increased pretty soon. We can probably repeat the search using the highest added date,
+     * TODO: but will likely need to sort so that we can use this value as a form of paging.
      *
      * @param surveyId The survey ID.
      * @param formType The form type.
@@ -50,7 +51,7 @@ public class Search {
                 Document document = indexSearcher.doc(scoreDoc.doc);
                 resultData.addedDate = document.get(SdxStore.addedDate);
                 resultData.addedMs = document.get(SdxStore.addedMs);
-                resultData.response = Json.parse(document.get(SdxStore.response));
+                resultData.surveyResponse = Json.parse(document.get(SdxStore.surveyResponse));
                 resultList.results.add(resultData);
             }
 

@@ -47,8 +47,8 @@ public class Store {
         addField(document, formType, argonaut);
         addField(document, ruRef, argonaut);
 
-        // Raw Json
-        document.add(new TextField(SdxStore.response, json.toString(), Field.Store.YES));
+        // Json survey response
+        document.add(new TextField(SdxStore.surveyResponse, json.toString(), Field.Store.YES));
 
         // Added date in searchable and viewable formats - rudimentary metadata.
         Date date = new Date();

@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * API for storing and retrieving responses.
+ * API for storing and retrieving survey response data.
  */
 @Api
 public class Response {
