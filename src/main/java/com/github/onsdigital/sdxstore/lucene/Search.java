@@ -2,26 +2,24 @@ package com.github.onsdigital.sdxstore.lucene;
 
 
 import com.google.gson.JsonElement;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
+import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
 import org.apache.lucene.queryparser.xml.builders.TermQueryBuilder;
+import org.apache.lucene.search.*;
 import org.apache.lucene.util.QueryBuilder;
 import org.apache.lucene.queryparser.xml.QueryBuilderFactory;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.github.onsdigital.sdxstore.lucene.SdxStore.*;
 import static org.apache.lucene.index.IndexWriterConfig.OpenMode.CREATE_OR_APPEND;
@@ -32,8 +30,37 @@ import static org.apache.lucene.index.IndexWriterConfig.OpenMode.CREATE_OR_APPEN
  */
 public class Search {
 
-    public static JsonElement get() {
+    public static JsonElement get(String surveyId, String formType, String ruRef, String period, String addedMs) {
+
+        BooleanQuery.Builder builder = new BooleanQuery.Builder();
+
+        // Add the specified search terms
+        add(SdxStore.surveyId, surveyId, builder);
+        add(SdxStore.formType, formType, builder);
+        add(SdxStore.ruRef, ruRef, builder);
+        add(SdxStore.period, period, builder);
+
+        // Add the "since" filter, if specified
+        if (StringUtils.isNumeric(period)) {
+            TermRangeQuery rangeQuery = TermRangeQuery.newStringRange(SdxStore.addedMs, addedMs, "*", true, false);
+            builder.add(rangeQuery, BooleanClause.Occur.MUST);
+        }
+
+
         return null;
+    }
+
+    /**
+     * Adds a {@link TermQuery} to the given {@link BooleanQuery.Builder}.
+     * @param name The field name.
+     * @param value The search term.
+     * @param builder The builder to add to.
+     */
+    private static void add(String name, String value, BooleanQuery.Builder builder) {
+        if (StringUtils.isNotBlank(value)) {
+            TermQuery termQuery = new TermQuery(new Term(name, value));
+            builder.add(termQuery, BooleanClause.Occur.MUST);
+        }
     }
 
 
