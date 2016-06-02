@@ -25,7 +25,7 @@ public class JsonTest {
         String string = "\"test\"";
 
         // When
-        JsonElement json = Argonaut.parse(string);
+        JsonElement json = Json.parse(string);
 
 
         // Then
@@ -41,7 +41,7 @@ public class JsonTest {
         String string = "[\"one\", \"two\", \"three\"]";
 
         // When
-        JsonElement json = Argonaut.parse(string);
+        JsonElement json = Json.parse(string);
 
         // Then
         assertNotNull(json);
@@ -57,7 +57,7 @@ public class JsonTest {
         String string = "{\"one\": \"first\", \"two\": \"second\", \"three\": \"third\"}";
 
         // When
-        JsonElement json = Argonaut.parse(string);
+        JsonElement json = Json.parse(string);
 
         // Then
         assertNotNull(json);
@@ -75,7 +75,7 @@ public class JsonTest {
         try (InputStream inputStream = ResourceUtils.getStream("/test.json")) {
 
             // When
-            JsonElement json = Argonaut.parse(inputStream);
+            JsonElement json = Json.parse(inputStream);
 
             // Then
             assertNotNull(json);

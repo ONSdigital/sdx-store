@@ -1,6 +1,6 @@
 package com.github.onsdigital.sdxstore.lucene;
 
-import com.github.onsdigital.sdxstore.json.Argonaut;
+import com.github.onsdigital.sdxstore.json.Json;
 import com.google.gson.JsonElement;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.document.*;
@@ -40,7 +40,7 @@ public class Store {
      */
     Document document(JsonElement json) {
         Document document = new Document();
-        Argonaut argonaut = new Argonaut(json);
+        Json argonaut = new Json(json);
 
         // Identifying coordinates
         addField(document, surveyId, argonaut);
@@ -63,10 +63,10 @@ public class Store {
      *
      * @param document The {@link Document} to add the {@link Field} to.
      * @param path     The path in the Json to use as the value of the field.
-     * @param argonaut An {@link Argonaut} instance for accessing the Json.
+     * @param json An {@link Json} instance for accessing the Json.
      */
-    void addField(Document document, String path, Argonaut argonaut) {
-        String value = StringUtils.defaultIfBlank(argonaut.stringAt(path), "");
+    void addField(Document document, String path, Json json) {
+        String value = StringUtils.defaultIfBlank(json.stringAt(path), "");
         document.add(new StringField(path, value, Field.Store.YES));
     }
 }

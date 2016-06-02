@@ -28,7 +28,7 @@ public class ValuesTest {
 
     @Before
     public void before() {
-        json = Argonaut.parse(string);
+        json = Json.parse(string);
         values = new Values();
     }
 
@@ -142,7 +142,7 @@ public class ValuesTest {
 
         // Given
         String value = "test";
-        JsonElement json = Argonaut.parse("\"" + value + "\"");
+        JsonElement json = Json.parse("\"" + value + "\"");
 
         // When
         String result = values.getString("", json);

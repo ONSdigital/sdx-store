@@ -2,7 +2,7 @@ package com.github.onsdigital.sdxstore.api;
 
 import com.github.davidcarboni.restolino.framework.Api;
 import com.github.davidcarboni.restolino.helpers.QueryString;
-import com.github.onsdigital.sdxstore.json.Argonaut;
+import com.github.onsdigital.sdxstore.json.Json;
 import com.github.onsdigital.sdxstore.lucene.SdxStore;
 import com.github.onsdigital.sdxstore.lucene.Search;
 import com.github.onsdigital.sdxstore.lucene.Store;
@@ -25,7 +25,7 @@ public class Response {
 
     @POST
     public void store(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        JsonElement json = Argonaut.parse(request.getInputStream());
+        JsonElement json = Json.parse(request.getInputStream());
         Store.add(json);
     }
 

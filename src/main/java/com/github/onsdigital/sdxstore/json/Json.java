@@ -9,9 +9,9 @@ import java.io.Reader;
 import java.util.Map;
 
 /**
- * Created by david on 31/05/2016.
+ * Class to deal with parsing Json and accessing Json values by dot-notated path.
  */
-public class Argonaut {
+public class Json {
 
     JsonElement json;
     Keys keys = new Keys();
@@ -31,7 +31,7 @@ public class Argonaut {
     }
 
 
-    public Argonaut(JsonElement json) {
+    public Json(JsonElement json) {
         this.json = json;
         paths = keys.getPaths(json);
     }
