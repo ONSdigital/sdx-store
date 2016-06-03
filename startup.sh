@@ -17,7 +17,7 @@ else
 fi
 
 java -Xmx4094m \
-          -Drestolino.packageprefix=com.github.onsdigital.perkin.api \
+          -Drestolino.packageprefix=com.github.onsdigital.sdxstore.api \
 	  -Dlog.level=$LOG_LEVEL \
 	  -Droot.log.level=$ROOT_LOG_LEVEL \
           -jar target/*-jar-with-dependencies.jar
