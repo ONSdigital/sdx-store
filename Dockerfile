@@ -1,12 +1,16 @@
-FROM java
+FROM onsdigital/flask-crypto
 
-# Add the build artifacts
-WORKDIR /usr/src
-#ADD git_commit_id /usr/src/
-ADD ./target/*-jar-with-dependencies.jar /usr/src/target/
-ADD ./startup.sh /usr/src
+ADD server.py /app/server.py
+ADD settings.py /app/settings.py
+ADD requirements.txt /app/requirements.txt
 
-EXPOSE 8080
+RUN mkdir -p /app/logs
 
-# Set the entry point
-ENTRYPOINT ./startup.sh
+# set working directory to /app/
+WORKDIR /app/
+
+EXPOSE 5000
+
+RUN pip3 install --no-cache-dir -U -I -r /app/requirements.txt
+
+ENTRYPOINT python3 server.py
