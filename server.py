@@ -22,7 +22,7 @@ def do_save_response():
     survey_response = request.get_json(force=True)
     doc = {}
     doc['survey_response'] = survey_response
-    doc['added_at'] = datetime.now()
+    doc['added_date'] = datetime.utcnow()
     try:
         result = db.responses.insert_one( doc )
     except pymongo.errors.OperationFailure as e:
@@ -71,13 +71,14 @@ def do_get_responses():
     results = {}
     responses  = []
     count = db.responses.count()
-    results['count'] = count
+    results['total_hits'] = count
     cursor = db.responses.find(search_criteria).skip(per_page*(page-1)).limit(per_page)
     for document in cursor:
         document['id'] = str(document['_id'])
         del document['_id']
+        document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
         responses.append(document)
-    results['responses'] = responses
+    results['results'] = responses
     return jsonify(results)
 
 if __name__ == '__main__':
