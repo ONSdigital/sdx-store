@@ -70,10 +70,10 @@ def do_get_responses():
     if ru_ref:    search_criteria['survey_response.metadata.ru_ref'] = ru_ref
     if period:    search_criteria['survey_response.collection.period'] = period
     if added_ms:  search_criteria['added_date'] = { "$gte" : datetime.fromtimestamp(int(added_ms)/1000.0) }
-    
+
     results = {}
     responses  = []
-    count = db.responses.count()
+    count = db.responses.find(search_criteria).count()
     results['total_hits'] = count
     cursor = db.responses.find(search_criteria).skip(per_page*(page-1)).limit(per_page)
     for document in cursor:
