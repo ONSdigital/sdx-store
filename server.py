@@ -35,6 +35,7 @@ schema = Schema({
    'form': str,
    'ru_ref': str,
    'period': str,
+   'added_ms': Coerce(int),
    'per_page': All(Coerce(int), Range(min=1, max=100)),
    'page': All(Coerce(int), Range(min=1)),
 })
@@ -49,6 +50,7 @@ def do_get_responses():
     form      = request.args.get('form')
     ru_ref    = request.args.get('ru_ref')
     period    = request.args.get('period')
+    added_ms  = request.args.get('added_ms')
     page      = request.args.get('page')
     per_page  = request.args.get('per_page')
 
@@ -67,7 +69,8 @@ def do_get_responses():
     if form:      search_criteria['survey_response.form'] = form
     if ru_ref:    search_criteria['survey_response.metadata.ru_ref'] = ru_ref
     if period:    search_criteria['survey_response.collection.period'] = period
-
+    if added_ms:  search_criteria['added_date'] = { "$gte" : datetime.fromtimestamp(int(added_ms)/1000.0) }
+    
     results = {}
     responses  = []
     count = db.responses.count()
