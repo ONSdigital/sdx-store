@@ -9,6 +9,8 @@ from pymongo import MongoClient
 import pymongo.errors
 from datetime import datetime
 from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
+from bson.objectid import ObjectId
+from bson.errors import InvalidId
 
 app = Flask(__name__)
 
@@ -77,12 +79,28 @@ def do_get_responses():
     results['total_hits'] = count
     cursor = db.responses.find(search_criteria).skip(per_page*(page-1)).limit(per_page)
     for document in cursor:
-        document['id'] = str(document['_id'])
-        del document['_id']
+        document['_id'] = str(document['_id'])
         document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
         responses.append(document)
     results['results'] = responses
     return jsonify(results)
+
+
+@app.route('/responses/<mongo_id>', methods=['GET'])
+def do_get_response(mongo_id):
+    try:
+        result = db.responses.find_one({"_id": ObjectId(mongo_id)})
+
+        if result:
+            result['_id'] = str(result['_id'])
+            return jsonify(result)
+    except InvalidId as e:
+        return jsonify({}), 404
+    except Exception as e:
+        raise e
+
+    return jsonify({}), 404
+
 
 if __name__ == '__main__':
     # Startup
