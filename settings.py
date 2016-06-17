@@ -10,7 +10,7 @@ LOGGING_LEVEL = logging.DEBUG
 # Default to true, cast to boolean
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 
-RABBIT_QUEUE = os.getenv('RABBITMQ_QUEUE', 'survey-notifications')
+RABBIT_QUEUE = os.getenv('RABBITMQ_QUEUE', 'sdx-survey-notifications')
 
 RABBIT_URL = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
     hostname=os.getenv('RABBITMQ_HOST', 'rabbit'),
