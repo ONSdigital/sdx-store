@@ -11,13 +11,27 @@ from datetime import datetime
 from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
+import pika
 
 app = Flask(__name__)
 
 app.config['MONGODB_URL'] = settings.MONGODB_URL
+logger = settings.logger
 
 mongo_client = MongoClient(app.config['MONGODB_URL'])
 db = mongo_client.sdx_store
+
+def queue_notification(notification):
+    logger.debug(" [x] Queuing notification to " + settings.RABBIT_QUEUE)
+    logger.debug(notification)
+    connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_URL))
+    channel = connection.channel()
+    channel.queue_declare(queue=settings.RABBIT_QUEUE)
+    channel.basic_publish(exchange='',
+                          routing_key=settings.RABBIT_QUEUE,
+                          body=notification)
+    logger.debug(" [x] Queued notification to " + settings.RABBIT_QUEUE)
+    connection.close()
 
 @app.route('/responses', methods=['POST'])
 def do_save_response():
@@ -27,6 +41,7 @@ def do_save_response():
     doc['added_date'] = datetime.utcnow()
     try:
         result = db.responses.insert_one( doc )
+        queue_notification(str(result.inserted_id))
     except pymongo.errors.OperationFailure as e:
         return jsonify(error=str(e)), 400
 
