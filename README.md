@@ -1,5 +1,7 @@
 # sdx-store
 
+[![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store)
+
 Scalable service for storing SDX data (backed by MongoDB).
 
 ## Prerequisites
