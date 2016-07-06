@@ -1,6 +1,4 @@
 import settings
-import json
-import html
 import logging
 import logging.handlers
 import requests
@@ -22,6 +20,17 @@ logger = settings.logger
 mongo_client = MongoClient(app.config['MONGODB_URL'])
 db = mongo_client.sdx_store
 
+schema = Schema({
+    'survey_id': str,
+    'form': str,
+    'ru_ref': str,
+    'period': str,
+    'added_ms': Coerce(int),
+    'per_page': All(Coerce(int), Range(min=1, max=100)),
+    'page': All(Coerce(int), Range(min=1)),
+})
+
+
 def queue_notification(notification):
     logger.debug(" [x] Queuing notification to " + settings.RABBIT_QUEUE)
     logger.debug(notification)
@@ -34,6 +43,7 @@ def queue_notification(notification):
     logger.debug(" [x] Queued notification to " + settings.RABBIT_QUEUE)
     connection.close()
 
+
 @app.route('/responses', methods=['POST'])
 def do_save_response():
     survey_response = request.get_json(force=True)
@@ -41,22 +51,13 @@ def do_save_response():
     doc['survey_response'] = survey_response
     doc['added_date'] = datetime.utcnow()
     try:
-        result = db.responses.insert_one( doc )
+        result = db.responses.insert_one(doc)
         queue_notification(str(result.inserted_id))
     except pymongo.errors.OperationFailure as e:
         return jsonify(error=str(e)), 400
 
     return jsonify(result="ok")
 
-schema = Schema({
-   'survey_id': str,
-   'form': str,
-   'ru_ref': str,
-   'period': str,
-   'added_ms': Coerce(int),
-   'per_page': All(Coerce(int), Range(min=1, max=100)),
-   'page': All(Coerce(int), Range(min=1)),
-})
 
 @app.route('/responses', methods=['GET'])
 def do_get_responses():
@@ -65,12 +66,12 @@ def do_get_responses():
     except MultipleInvalid as e:
         return jsonify(error=str(e)), 400
     survey_id = request.args.get('survey_id')
-    form      = request.args.get('form')
-    ru_ref    = request.args.get('ru_ref')
-    period    = request.args.get('period')
-    added_ms  = request.args.get('added_ms')
-    page      = request.args.get('page')
-    per_page  = request.args.get('per_page')
+    form = request.args.get('form')
+    ru_ref = request.args.get('ru_ref')
+    period = request.args.get('period')
+    added_ms = request.args.get('added_ms')
+    page = request.args.get('page')
+    per_page = request.args.get('per_page')
 
     # paging defaults
     if not page:
@@ -83,17 +84,24 @@ def do_get_responses():
         per_page = int(per_page)
 
     search_criteria = {}
-    if survey_id: search_criteria['survey_response.survey_id'] = survey_id
-    if form:      search_criteria['survey_response.form'] = form
-    if ru_ref:    search_criteria['survey_response.metadata.ru_ref'] = ru_ref
-    if period:    search_criteria['survey_response.collection.period'] = period
-    if added_ms:  search_criteria['added_date'] = { "$gte" : datetime.fromtimestamp(int(added_ms)/1000.0) }
+    if survey_id:
+        search_criteria['survey_response.survey_id'] = survey_id
+    if form:
+        search_criteria['survey_response.form'] = form
+    if ru_ref:
+        search_criteria['survey_response.metadata.ru_ref'] = ru_ref
+    if period:
+        search_criteria['survey_response.collection.period'] = period
+    if added_ms:
+        search_criteria['added_date'] = {
+            "$gte": datetime.fromtimestamp(int(added_ms) / 1000.0)
+        }
 
     results = {}
-    responses  = []
+    responses = []
     count = db.responses.find(search_criteria).count()
     results['total_hits'] = count
-    cursor = db.responses.find(search_criteria).skip(per_page*(page-1)).limit(per_page)
+    cursor = db.responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
     for document in cursor:
         document['_id'] = str(document['_id'])
         document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
