@@ -11,6 +11,7 @@ from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 import pika
+from structlog import wrap_logger
 
 app = Flask(__name__)
 
