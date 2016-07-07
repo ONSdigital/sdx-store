@@ -13,7 +13,13 @@ import pika
 app = Flask(__name__)
 
 app.config['MONGODB_URL'] = settings.MONGODB_URL
-logger = settings.logger
+
+logging.basicConfig(filename=settings.LOGGING_LOCATION, level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
+
+logger = wrap_logger(
+    logging.getLogger(__name__)
+)
+logger.debug("START")
 
 mongo_client = MongoClient(app.config['MONGODB_URL'])
 db = mongo_client.sdx_store
@@ -28,6 +34,34 @@ schema = Schema({
     'page': All(Coerce(int), Range(min=1)),
 })
 
+@app.errorhandler(400)
+def errorhandler_400(e):
+    return client_error(repr(e))
+
+
+def client_error(error=None):
+    logger.error("FAILURE:%s", error)
+    message = {
+        'status': 400,
+        'message': error,
+        'uri': request.url,
+    }
+    resp = jsonify(message)
+    resp.status_code = 400
+
+    return resp
+
+
+@app.errorhandler(500)
+def server_error(error=None):
+    message = {
+        'status': 500,
+        'message': "Internal server error: " + repr(error),
+    }
+    resp = jsonify(message)
+    resp.status_code = 500
+
+    return resp
 
 def queue_notification(notification):
     logger.debug(" [x] Queuing notification to " + settings.RABBIT_QUEUE)
@@ -45,6 +79,9 @@ def queue_notification(notification):
 @app.route('/responses', methods=['POST'])
 def do_save_response():
     survey_response = request.get_json(force=True)
+    stored_json = survey_response['survey_response']
+    metadata = stored_json['metadata']
+    bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'])
     doc = {}
     doc['survey_response'] = survey_response
     doc['added_date'] = datetime.utcnow()
@@ -52,7 +89,8 @@ def do_save_response():
         result = db.responses.insert_one(doc)
         queue_notification(str(result.inserted_id))
     except pymongo.errors.OperationFailure as e:
-        return jsonify(error=str(e)), 400
+        bound_logger.error("MongoDB failed", error=str(e))
+        return client_error(str(e))
 
     return jsonify(result="ok")
 
@@ -62,7 +100,8 @@ def do_get_responses():
     try:
         schema(request.args)
     except MultipleInvalid as e:
-        return jsonify(error=str(e)), 400
+        logger.error("Multiple Invalid", error=str(e))
+        return client_error(str(e))
     survey_id = request.args.get('survey_id')
     form = request.args.get('form')
     ru_ref = request.args.get('ru_ref')
@@ -117,14 +156,10 @@ def do_get_response(mongo_id):
             result['_id'] = str(result['_id'])
             return jsonify(result)
     except InvalidId as e:
+        logger.error("Invalid ID", status='404')
         return jsonify({}), 404
     except Exception as e:
+        logger.error("Exception", status='404')
         raise e
 
     return jsonify({}), 404
-
-
-if __name__ == '__main__':
-    # Startup
-    logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
-    app.run(debug=True, host='0.0.0.0', port=5000)
