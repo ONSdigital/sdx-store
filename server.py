@@ -12,14 +12,10 @@ import pika
 from structlog import wrap_logger
 
 app = Flask(__name__)
-
 app.config['MONGODB_URL'] = settings.MONGODB_URL
 
 logging.basicConfig(filename=settings.LOGGING_LOCATION, level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
-
-logger = wrap_logger(
-    logging.getLogger(__name__)
-)
+logger = wrap_logger(logging.getLogger(__name__))
 logger.debug("START")
 
 mongo_client = MongoClient(app.config['MONGODB_URL'])
@@ -35,17 +31,18 @@ schema = Schema({
     'page': All(Coerce(int), Range(min=1)),
 })
 
+
 @app.errorhandler(400)
 def errorhandler_400(e):
     return client_error(repr(e))
 
 
 def client_error(error=None):
-    logger.error("FAILURE:%s", error)
+    logger.error(error, request=request.data.decode('UTF8'))
     message = {
         'status': 400,
         'message': error,
-        'uri': request.url,
+        'uri': request.url
     }
     resp = jsonify(message)
     resp.status_code = 400
@@ -54,15 +51,17 @@ def client_error(error=None):
 
 
 @app.errorhandler(500)
-def server_error(error=None):
+def server_error(e):
+    logger.error("Server Error", exception=repr(e), request=request.data.decode('UTF8'))
     message = {
         'status': 500,
-        'message': "Internal server error: " + repr(error),
+        'message': "Internal server error: " + repr(e)
     }
     resp = jsonify(message)
     resp.status_code = 500
 
     return resp
+
 
 def queue_notification(notification):
     logger.debug(" [x] Queuing notification to " + settings.RABBIT_QUEUE)
@@ -77,22 +76,29 @@ def queue_notification(notification):
     connection.close()
 
 
-@app.route('/responses', methods=['POST'])
-def do_save_response():
-    survey_response = request.get_json(force=True)
-    stored_json = survey_response['survey_response']
-    metadata = stored_json['metadata']
+def save_response(survey_response):
+    metadata = survey_response['survey_response']['metadata']
     bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'])
+
     doc = {}
     doc['survey_response'] = survey_response
     doc['added_date'] = datetime.utcnow()
     try:
-        result = db.responses.insert_one(doc)
-        queue_notification(str(result.inserted_id))
+        return db.responses.insert_one(doc)
+
     except pymongo.errors.OperationFailure as e:
         bound_logger.error("MongoDB failed", error=str(e))
-        return client_error(str(e))
+        return server_error(e)
 
+
+@app.route('/responses', methods=['POST'])
+def do_save_response():
+    survey_response = request.get_json(force=True)
+    if not survey_response:
+        return client_error("Request payload was empty")
+
+    result = save_response(survey_response)
+    queue_notification(str(result.inserted_id))
     return jsonify(result="ok")
 
 
