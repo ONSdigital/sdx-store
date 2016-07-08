@@ -1,4 +1,5 @@
 import settings
+import sys
 import logging
 import logging.handlers
 from flask import Flask, request, jsonify
@@ -14,7 +15,7 @@ from structlog import wrap_logger
 app = Flask(__name__)
 app.config['MONGODB_URL'] = settings.MONGODB_URL
 
-logging.basicConfig(filename=settings.LOGGING_LOCATION, level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
+logging.basicConfig(stream=sys.stdout, level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
 logger.debug("START")
 
