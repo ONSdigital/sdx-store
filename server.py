@@ -164,3 +164,8 @@ def do_get_response(mongo_id):
         raise e
 
     return jsonify({}), 404
+
+if __name__ == '__main__':
+    # Startup
+    logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
+    app.run(debug=True, host='0.0.0.0', port=5000)
