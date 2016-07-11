@@ -1,7 +1,3 @@
-import settings
-import sys
-import logging
-import logging.handlers
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 import pymongo.errors
@@ -10,17 +6,13 @@ from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 import pika
+import settings
+import logging
 from structlog import wrap_logger
 
+logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
 app.config['MONGODB_URL'] = settings.MONGODB_URL
-
-logging.basicConfig(stream=sys.stdout, level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
-logger = wrap_logger(logging.getLogger(__name__))
-logger.debug("START")
-
-mongo_client = MongoClient(app.config['MONGODB_URL'])
-db = mongo_client.sdx_store
 
 schema = Schema({
     'survey_id': str,
@@ -29,8 +21,13 @@ schema = Schema({
     'period': str,
     'added_ms': Coerce(int),
     'per_page': All(Coerce(int), Range(min=1, max=100)),
-    'page': All(Coerce(int), Range(min=1)),
+    'page': All(Coerce(int), Range(min=1))
 })
+
+
+def get_db_responses():
+    mongo_client = MongoClient(app.config['MONGODB_URL'])
+    return mongo_client.sdx_store.responses
 
 
 @app.errorhandler(400)
@@ -39,7 +36,7 @@ def errorhandler_400(e):
 
 
 def client_error(error=None):
-    logger.error(error, request=request.data.decode('UTF8'))
+    logger.error(error, status=400)
     message = {
         'status': 400,
         'message': error,
@@ -52,11 +49,16 @@ def client_error(error=None):
 
 
 @app.errorhandler(500)
-def server_error(e):
-    logger.error("Server Error", exception=repr(e), request=request.data.decode('UTF8'))
+def errorhandler_500(e):
+    return server_error(repr(e))
+
+
+@app.errorhandler(500)
+def server_error(error=None):
+    logger.error(error, status=500)
     message = {
         'status': 500,
-        'message': "Internal server error: " + repr(e)
+        'message': error
     }
     resp = jsonify(message)
     resp.status_code = 500
@@ -64,42 +66,43 @@ def server_error(e):
     return resp
 
 
-def queue_notification(notification):
-    logger.debug(" [x] Queuing notification to " + settings.RABBIT_QUEUE)
-    logger.debug(notification)
+def queue_notification(notification, bound_logger):
+    bound_logger.debug(" [x] Queuing notification to " + settings.RABBIT_QUEUE)
+    bound_logger.debug(notification)
     connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_URL))
     channel = connection.channel()
     channel.queue_declare(queue=settings.RABBIT_QUEUE)
     channel.basic_publish(exchange='',
                           routing_key=settings.RABBIT_QUEUE,
                           body=notification)
-    logger.debug(" [x] Queued notification to " + settings.RABBIT_QUEUE)
+    bound_logger.debug(" [x] Queued notification to " + settings.RABBIT_QUEUE)
     connection.close()
 
 
-def save_response(survey_response):
-    metadata = survey_response['survey_response']['metadata']
-    bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'])
-
+def save_response(survey_response, bound_logger):
     doc = {}
     doc['survey_response'] = survey_response
     doc['added_date'] = datetime.utcnow()
     try:
-        return db.responses.insert_one(doc)
+        result = get_db_responses().insert_one(doc)
+        return str(result.inserted_id)
 
     except pymongo.errors.OperationFailure as e:
         bound_logger.error("MongoDB failed", error=str(e))
-        return server_error(e)
+        return None
 
 
 @app.route('/responses', methods=['POST'])
 def do_save_response():
     survey_response = request.get_json(force=True)
-    if not survey_response:
-        return client_error("Request payload was empty")
+    metadata = survey_response['metadata']
+    bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'])
 
-    result = save_response(survey_response)
-    queue_notification(str(result.inserted_id))
+    inserted_id = save_response(survey_response, bound_logger)
+    if inserted_id is None:
+        return server_error("Unable to save response")
+
+    queue_notification(inserted_id, bound_logger)
     return jsonify(result="ok")
 
 
@@ -110,6 +113,7 @@ def do_get_responses():
     except MultipleInvalid as e:
         logger.error("Multiple Invalid", error=str(e))
         return client_error(str(e))
+
     survey_id = request.args.get('survey_id')
     form = request.args.get('form')
     ru_ref = request.args.get('ru_ref')
@@ -144,13 +148,15 @@ def do_get_responses():
 
     results = {}
     responses = []
-    count = db.responses.find(search_criteria).count()
+    db_responses = get_db_responses()
+    count = db_responses.find(search_criteria).count()
     results['total_hits'] = count
-    cursor = db.responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
+    cursor = db_responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
     for document in cursor:
         document['_id'] = str(document['_id'])
         document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
         responses.append(document)
+
     results['results'] = responses
     return jsonify(results)
 
@@ -158,14 +164,15 @@ def do_get_responses():
 @app.route('/responses/<mongo_id>', methods=['GET'])
 def do_get_response(mongo_id):
     try:
-        result = db.responses.find_one({"_id": ObjectId(mongo_id)})
-
+        result = get_db_responses().find_one({"_id": ObjectId(mongo_id)})
         if result:
             result['_id'] = str(result['_id'])
             return jsonify(result)
+
     except InvalidId as e:
         logger.error("Invalid ID", status='404')
         return jsonify({}), 404
+
     except Exception as e:
         logger.error("Exception", status='404')
         raise e
@@ -173,6 +180,5 @@ def do_get_response(mongo_id):
     return jsonify({}), 404
 
 if __name__ == '__main__':
-    # Startup
-    logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
+    logger.debug("START")
     app.run(debug=True, host='0.0.0.0', port=5000)
