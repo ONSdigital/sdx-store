@@ -170,12 +170,10 @@ def do_get_response(mongo_id):
             return jsonify(result)
 
     except InvalidId as e:
-        logger.error("Invalid ID", status='404')
-        return jsonify({}), 404
+        return client_error(repr(e))
 
     except Exception as e:
-        logger.error("Exception", status='404')
-        raise e
+        return server_error(e)
 
     return jsonify({}), 404
 
