@@ -187,7 +187,7 @@ def do_get_response(mongo_id):
         return client_error(repr(e))
 
     except Exception as e:
-        return server_error(e)
+        return server_error(repr(e))
 
     return jsonify({}), 404
 
