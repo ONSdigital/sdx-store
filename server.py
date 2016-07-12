@@ -185,6 +185,22 @@ def do_get_response(mongo_id):
 
     return jsonify({}), 404
 
+
+@app.route('/queue', methods=['POST'])
+def do_queue():
+    mongo_id = request.get_data().decode('UTF8')
+    # check document exists with id
+    result = do_get_response(mongo_id)
+    if result.status_code != 200:
+        return client_error("Unable to find document with id: " + mongo_id)
+
+    queued = queue_notification(mongo_id, logger)
+    if queued is False:
+        return server_error("Unable to queue notification")
+
+    return jsonify(result="ok")
+
+
 if __name__ == '__main__':
     logger.debug("START")
     app.run(debug=True, host='0.0.0.0', port=5000)
