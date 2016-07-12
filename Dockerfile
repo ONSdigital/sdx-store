@@ -3,6 +3,7 @@ FROM onsdigital/flask-crypto
 ADD server.py /app/server.py
 ADD settings.py /app/settings.py
 ADD requirements.txt /app/requirements.txt
+ADD startup.sh /app/startup.sh
 
 RUN mkdir -p /app/logs
 
@@ -13,4 +14,4 @@ EXPOSE 5000
 
 RUN pip3 install --no-cache-dir -U -I -r /app/requirements.txt
 
-ENTRYPOINT python3 server.py
+ENTRYPOINT startup.sh
