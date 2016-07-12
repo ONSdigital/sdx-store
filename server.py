@@ -4,6 +4,7 @@ import html
 import logging
 import logging.handlers
 import requests
+import os
 from flask import Flask, request, Response, jsonify, abort
 from pymongo import MongoClient
 import pymongo.errors
@@ -120,4 +121,5 @@ def do_get_response(mongo_id):
 if __name__ == '__main__':
     # Startup
     logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.getenv("PORT"))
+    app.run(debug=True, host='0.0.0.0', port=port)
