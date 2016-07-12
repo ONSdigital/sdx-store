@@ -67,20 +67,20 @@ def server_error(error=None):
 
 
 def queue_notification(notification, bound_logger):
-    bound_logger.debug(" [x] Queuing notification to " + settings.RABBIT_QUEUE)
-    bound_logger.debug(notification)
+    bound_logger = bound_logger.bind(queue=settings.RABBIT_QUEUE, notification=notification)
+    bound_logger.debug("Queuing notification")
     try:
         connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_URL))
         channel = connection.channel()
         channel.queue_declare(queue=settings.RABBIT_QUEUE)
         channel.basic_publish(exchange='', routing_key=settings.RABBIT_QUEUE, body=notification)
-        bound_logger.debug(" [x] Queued notification to " + settings.RABBIT_QUEUE)
+        bound_logger.debug("Queued notification")
         connection.close()
         return True
 
     except Exception as e:
         # TODO: how to deal with retry?
-        bound_logger.error("Unable to queue notification", queue=settings.RABBIT_QUEUE, exception=repr(e))
+        bound_logger.error("Unable to queue notification", exception=repr(e))
         return False
 
 
@@ -93,7 +93,7 @@ def save_response(survey_response, bound_logger):
         return str(result.inserted_id)
 
     except pymongo.errors.OperationFailure as e:
-        bound_logger.error("MongoDB failed", error=str(e))
+        bound_logger.error("Failed to store survey response", exception=str(e))
         return None
 
 
@@ -119,7 +119,7 @@ def do_get_responses():
     try:
         schema(request.args)
     except MultipleInvalid as e:
-        logger.error("Multiple Invalid", error=str(e))
+        logger.error("Request args failed schema validation", error=str(e))
         return client_error(str(e))
 
     survey_id = request.args.get('survey_id')
