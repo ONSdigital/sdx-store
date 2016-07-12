@@ -69,14 +69,19 @@ def server_error(error=None):
 def queue_notification(notification, bound_logger):
     bound_logger.debug(" [x] Queuing notification to " + settings.RABBIT_QUEUE)
     bound_logger.debug(notification)
-    connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_URL))
-    channel = connection.channel()
-    channel.queue_declare(queue=settings.RABBIT_QUEUE)
-    channel.basic_publish(exchange='',
-                          routing_key=settings.RABBIT_QUEUE,
-                          body=notification)
-    bound_logger.debug(" [x] Queued notification to " + settings.RABBIT_QUEUE)
-    connection.close()
+    try:
+        connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_URL))
+        channel = connection.channel()
+        channel.queue_declare(queue=settings.RABBIT_QUEUE)
+        channel.basic_publish(exchange='', routing_key=settings.RABBIT_QUEUE, body=notification)
+        bound_logger.debug(" [x] Queued notification to " + settings.RABBIT_QUEUE)
+        connection.close()
+        return True
+
+    except Exception as e:
+        # TODO: how to deal with retry?
+        bound_logger.error("Unable to queue notification", queue=settings.RABBIT_QUEUE, exception=repr(e))
+        return False
 
 
 def save_response(survey_response, bound_logger):
@@ -102,7 +107,10 @@ def do_save_response():
     if inserted_id is None:
         return server_error("Unable to save response")
 
-    queue_notification(inserted_id, bound_logger)
+    queued = queue_notification(inserted_id, bound_logger)
+    if queued is False:
+        return server_error("Unable to queue notification")
+
     return jsonify(result="ok")
 
 
