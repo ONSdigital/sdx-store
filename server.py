@@ -188,11 +188,11 @@ def do_get_response(mongo_id):
 
 @app.route('/queue', methods=['POST'])
 def do_queue():
-    mongo_id = request.get_data().decode('UTF8')
+    mongo_id = request.get_json(force=True)['id']
     # check document exists with id
     result = do_get_response(mongo_id)
     if result.status_code != 200:
-        return client_error("Unable to find document with id: " + mongo_id)
+        return result
 
     queued = queue_notification(mongo_id, logger)
     if queued is False:
