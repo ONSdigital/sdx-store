@@ -126,7 +126,7 @@ def do_get_responses():
         schema(request.args)
     except MultipleInvalid as e:
         logger.error("Request args failed schema validation", error=str(e))
-        return client_error(str(e))
+        return client_error(repr(e))
 
     survey_id = request.args.get('survey_id')
     form = request.args.get('form')
@@ -168,7 +168,8 @@ def do_get_responses():
     cursor = db_responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
     for document in cursor:
         document['_id'] = str(document['_id'])
-        document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
+        if added_ms:
+            document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
         responses.append(document)
 
     results['results'] = responses

@@ -1,16 +1,23 @@
 import unittest
 import server
-from tests.test_data import test_message
+from tests.test_data import test_message, updated_message
 import mock
 import mongomock
+import json
 
 
 class TestStoreService(unittest.TestCase):
     endpoint = "/responses"
+    test_json = json.loads(test_message)
+    updated_json = json.loads(updated_message)
 
     def setUp(self):
         self.app = server.app.test_client()
         self.app.testing = True
+
+    def add_test_data(self, db):
+        docs = [{'survey_response': self.test_json}, {'survey_response': self.updated_json}]
+        db.insert_many(docs)
 
     # /responses POST
     def test_empty_post_request(self):
@@ -70,4 +77,62 @@ class TestStoreService(unittest.TestCase):
     # /responses?args GET
     def test_get_responses_invalid_params(self):
         r = self.app.get(self.endpoint + '?testing=123')
+        self.assertEqual(400, r.status_code)
+
+    def test_get_responses_valid_and_invalid_params(self):
+        r = self.app.get(self.endpoint + '?survey_id=123&testing=123')
+        self.assertEqual(400, r.status_code)
+
+    def test_get_responses_incorrect_value(self):
+        mock_db = mongomock.MongoClient().db.collection
+        with mock.patch('server.get_db_responses', return_value=mock_db):
+            r = self.app.get(self.endpoint + '?survey_id=123456')
+            total_count = json.loads(r.data.decode('utf8'))['total_hits']
+            self.assertEqual(0, total_count)
+
+    def test_get_responses_per_page(self):
+        mock_db = mongomock.MongoClient().db.collection
+        self.add_test_data(mock_db)
+        with mock.patch('server.get_db_responses', return_value=mock_db):
+            r = self.app.get(self.endpoint + '?per_page=1')
+            page_count = len(json.loads(r.data.decode('utf8'))['results'])
+            total_count = json.loads(r.data.decode('utf8'))['total_hits']
+            self.assertEqual(page_count, 1)
+            self.assertGreaterEqual(total_count, page_count)
+
+    def test_get_responses_survey_id(self):
+        mock_db = mongomock.MongoClient().db.collection
+        self.add_test_data(mock_db)
+        with mock.patch('server.get_db_responses', return_value=mock_db):
+            r = self.app.get(self.endpoint + '?survey_id=' + self.test_json['survey_id'])
+            total_count = json.loads(r.data.decode('utf8'))['total_hits']
+            self.assertEqual(total_count, 1)
+
+    def test_get_responses_period(self):
+        mock_db = mongomock.MongoClient().db.collection
+        self.add_test_data(mock_db)
+        with mock.patch('server.get_db_responses', return_value=mock_db):
+            r = self.app.get(self.endpoint + '?period=' + self.test_json['collection']['period'])
+            total_count = json.loads(r.data.decode('utf8'))['total_hits']
+            self.assertEqual(total_count, 1)
+
+    def test_get_responses_ru_ref(self):
+        mock_db = mongomock.MongoClient().db.collection
+        self.add_test_data(mock_db)
+        with mock.patch('server.get_db_responses', return_value=mock_db):
+            r = self.app.get(self.endpoint + '?ru_ref=' + self.test_json['metadata']['ru_ref'])
+            total_count = json.loads(r.data.decode('utf8'))['total_hits']
+            self.assertEqual(total_count, 1)
+
+    # test ranges for params
+    def test_min_range_per_page(self):
+        r = self.app.get(self.endpoint + '?per_page=0')
+        self.assertEqual(400, r.status_code)
+
+    def test_max_range_per_page(self):
+        r = self.app.get(self.endpoint + '?per_page=101')
+        self.assertEqual(400, r.status_code)
+
+    def test_min_range_page(self):
+        r = self.app.get(self.endpoint + '?page=0')
         self.assertEqual(400, r.status_code)
