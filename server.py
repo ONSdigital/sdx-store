@@ -1,10 +1,7 @@
 import settings
-import sys
 import logging
 import logging.handlers
-import requests
-import os
-from flask import Flask, request, Response, jsonify, abort
+from flask import Flask, request, jsonify
 from pymongo import MongoClient
 import pymongo.errors
 from datetime import datetime
@@ -12,7 +9,6 @@ from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 import pika
-import settings
 import logging
 from structlog import wrap_logger
 
