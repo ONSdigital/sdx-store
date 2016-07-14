@@ -1,14 +1,39 @@
 # sdx-store
 
-Json store for SDX data.
+[![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store)
+
+Scalable service for storing SDX data (backed by MongoDB).
+
+## Prerequisites
+
+A running instance of MongoDB. The service connects to `mongodb://localhost:27017` by default.
+
+To override this export a `MONGODB_URL` environment variable.
+
+## Installation
+
+Using virtualenv and pip, create a new environment and install within using:
+
+    $ pip install -r requirements.txt
+
+It's also possible to install within a container using docker. From the sdx-sequence directory:
+
+    $ docker build -t sdx-store .
+
+## Usage
+
+Start the sdx-store service using the following command:
+
+    python server.py
 
 ## API
 
-This component has a single API, `responses`, which represents survey responses:
- * `POST` with Json in the body of the request to store a survey response.
- * `GET` with query parameters to retrieve a set of matching survey responses.
+There are three endpoints:
+ * `POST /responses` - store a json survey response
+ * `GET /responses` - retrieve a set of survey responses matching the query parameters
+ * `GET /responses/<mongo_id>` - retrieve a survey by id
 
-# Query parameters
+### Query parameters
 
 The query parameters for `GET /responses` match the identifying data in the Json:
  * `survey_id`
@@ -17,9 +42,9 @@ The query parameters for `GET /responses` match the identifying data in the Json
  * `period`
  * `added_ms` - see below.
 
-These parameters do not all need to be provided, so you can choose how to select the survey responses you would like to receive.
+ These parameters do not all need to be provided, so you can choose how to select the survey responses you would like to receive.
 
-# Query response
+### Query response
 
 The response to `GET /responses` will contain a `total_hits` field, indicating the total number
 of matched survey responses. This may be higher than the number returned, which is currently capped at 100.

@@ -1,15 +1,12 @@
-import logging
 import os
+import sys
+import logging
 
-logger = logging.getLogger(__name__)
-
-LOGGING_FORMAT = "%(asctime)s|%(levelname)s: %(message)s"
-LOGGING_LOCATION = "logs/store.log"
+LOGGING_FORMAT = "%(asctime)s|%(levelname)s: sdx-store: %(message)s"
 LOGGING_LEVEL = logging.DEBUG
+logging.basicConfig(stream=sys.stdout, level=LOGGING_LEVEL, format=LOGGING_FORMAT)
 
-# Default to true, cast to boolean
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-
 RABBIT_QUEUE = os.getenv('RABBITMQ_QUEUE', 'sdx-survey-notifications')
 
 RABBIT_URL = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
