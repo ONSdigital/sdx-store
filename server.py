@@ -194,12 +194,5 @@ def do_get_response(mongo_id):
 
 
 if __name__ == '__main__':
-<<<<<<< 8340e5693c0ace4fa34081f52a2bab5132d6975e
-    # Startup
-    logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
-    port = int(os.getenv("PORT"))
-    app.run(debug=True, host='0.0.0.0', port=port)
-=======
     logger.debug("START")
     app.run(debug=True, host='0.0.0.0', port=5000)
->>>>>>> mocking wip
