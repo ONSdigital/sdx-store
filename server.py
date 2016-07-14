@@ -9,7 +9,6 @@ from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 import pika
-import logging
 from structlog import wrap_logger
 
 logger = wrap_logger(logging.getLogger(__name__))
@@ -187,6 +186,21 @@ def do_get_response(mongo_id):
         return server_error(repr(e))
 
     return jsonify({}), 404
+
+
+@app.route('/queue', methods=['POST'])
+def do_queue():
+    mongo_id = request.get_json(force=True)['id']
+    # check document exists with id
+    result = do_get_response(mongo_id)
+    if result.status_code != 200:
+        return result
+
+    queued = queue_notification(mongo_id, logger)
+    if queued is False:
+        return server_error("Unable to queue notification")
+
+    return jsonify(result="ok")
 
 
 if __name__ == '__main__':
