@@ -8,3 +8,4 @@ pymongo==3.2.2
 voluptuous==0.8.11
 pika==0.10.0
 gunicorn==19.6.0
+structlog==16.1.0
