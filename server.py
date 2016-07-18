@@ -10,6 +10,7 @@ from bson.objectid import ObjectId
 from bson.errors import InvalidId
 import pika
 from structlog import wrap_logger
+import os
 
 logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
@@ -204,5 +205,9 @@ def do_queue():
 
 
 if __name__ == '__main__':
+    # Startup
+    logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
     logger.debug("START")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+    port = int(os.getenv("PORT"))
+    app.run(debug=True, host='0.0.0.0', port=port)
