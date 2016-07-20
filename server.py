@@ -1,7 +1,8 @@
 import settings
 import logging
 import logging.handlers
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
+import json
 from pymongo import MongoClient
 import pymongo.errors
 from datetime import datetime
@@ -169,7 +170,14 @@ def do_get_responses():
         responses.append(document)
 
     results['results'] = responses
-    return jsonify(results)
+    return Response(json.dumps(results, default=json_serial))
+
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")
 
 
 @app.route('/responses/<mongo_id>', methods=['GET'])
