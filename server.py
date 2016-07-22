@@ -76,6 +76,11 @@ def json_serial(obj):
     raise TypeError("Type not serializable")
 
 
+def json_response(content):
+    output = json.dumps(content, default=json_serial)
+    return Response(output, mimetype='application/json')
+
+
 def queue_notification(notification, bound_logger):
     bound_logger = bound_logger.bind(queue=settings.RABBIT_QUEUE, notification=notification)
     bound_logger.debug("Queuing notification")
@@ -177,9 +182,7 @@ def do_get_responses():
         responses.append(document)
 
     results['results'] = responses
-
-    output = json.dumps(results, default=json_serial)
-    return Response(output, mimetype='application/json')
+    return json_response(results)
 
 
 @app.route('/responses/<mongo_id>', methods=['GET'])
@@ -188,7 +191,7 @@ def do_get_response(mongo_id):
         result = get_db_responses().find_one({"_id": ObjectId(mongo_id)})
         if result:
             result['_id'] = str(result['_id'])
-            return jsonify(result)
+            return json_response(result)
 
     except InvalidId as e:
         return client_error(repr(e))
