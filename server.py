@@ -69,6 +69,13 @@ def server_error(error=None):
     return resp
 
 
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")
+
+
 def queue_notification(notification, bound_logger):
     bound_logger = bound_logger.bind(queue=settings.RABBIT_QUEUE, notification=notification)
     bound_logger.debug("Queuing notification")
@@ -170,14 +177,9 @@ def do_get_responses():
         responses.append(document)
 
     results['results'] = responses
-    return Response(json.dumps(results, default=json_serial))
 
-
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    raise TypeError("Type not serializable")
+    output = json.dumps(results, default=json_serial)
+    return Response(output, mimetype='application/json')
 
 
 @app.route('/responses/<mongo_id>', methods=['GET'])
