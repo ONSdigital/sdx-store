@@ -1,7 +1,8 @@
 import settings
 import logging
 import logging.handlers
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
+import json
 from pymongo import MongoClient
 import pymongo.errors
 from datetime import datetime
@@ -66,6 +67,18 @@ def server_error(error=None):
     resp.status_code = 500
 
     return resp
+
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")
+
+
+def json_response(content):
+    output = json.dumps(content, default=json_serial)
+    return Response(output, mimetype='application/json')
 
 
 def queue_notification(notification, bound_logger):
@@ -169,7 +182,7 @@ def do_get_responses():
         responses.append(document)
 
     results['results'] = responses
-    return jsonify(results)
+    return json_response(results)
 
 
 @app.route('/responses/<mongo_id>', methods=['GET'])
@@ -178,7 +191,7 @@ def do_get_response(mongo_id):
         result = get_db_responses().find_one({"_id": ObjectId(mongo_id)})
         if result:
             result['_id'] = str(result['_id'])
-            return jsonify(result)
+            return json_response(result)
 
     except InvalidId as e:
         return client_error(repr(e))
