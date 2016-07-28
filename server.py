@@ -9,8 +9,8 @@ from datetime import datetime
 from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
-import pika
 from structlog import wrap_logger
+from notification import Notification
 import os
 
 logger = wrap_logger(logging.getLogger(__name__))
@@ -81,24 +81,6 @@ def json_response(content):
     return Response(output, mimetype='application/json')
 
 
-def queue_notification(notification, bound_logger):
-    bound_logger = bound_logger.bind(queue=settings.RABBIT_QUEUE, notification=notification)
-    bound_logger.debug("Queuing notification")
-    try:
-        connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_URL))
-        channel = connection.channel()
-        channel.queue_declare(queue=settings.RABBIT_QUEUE)
-        channel.basic_publish(exchange='', routing_key=settings.RABBIT_QUEUE, body=notification)
-        bound_logger.debug("Queued notification")
-        connection.close()
-        return True
-
-    except Exception as e:
-        # TODO: how to deal with retry?
-        bound_logger.error("Unable to queue notification", exception=repr(e))
-        return False
-
-
 def save_response(survey_response, bound_logger):
     doc = {}
     doc['survey_response'] = survey_response
@@ -112,6 +94,11 @@ def save_response(survey_response, bound_logger):
         return None
 
 
+def queue_notification(logger, mongo_id):
+    notification = Notification(logger, mongo_id)
+    return notification.send()
+
+
 @app.route('/responses', methods=['POST'])
 def do_save_response():
     survey_response = request.get_json(force=True)
@@ -122,7 +109,7 @@ def do_save_response():
     if inserted_id is None:
         return server_error("Unable to save response")
 
-    queued = queue_notification(inserted_id, bound_logger)
+    queued = queue_notification(bound_logger, inserted_id)
     if queued is False:
         return server_error("Unable to queue notification")
 
@@ -210,7 +197,7 @@ def do_queue():
     if result.status_code != 200:
         return result
 
-    queued = queue_notification(mongo_id, logger)
+    queued = queue_notification(logger, mongo_id)
     if queued is False:
         return server_error("Unable to queue notification")
 
