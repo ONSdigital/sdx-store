@@ -2,12 +2,10 @@ import pika
 import settings
 
 
-class Notification(object):
+class StoreQueue(object):
 
-    def __init__(self, logger, data):
+    def __init__(self, logger):
         self._logger = logger
-        self._data = data
-
         self._connection = None
         self._channel = None
 
@@ -35,9 +33,9 @@ class Notification(object):
         except Exception as e:
             self._logger.error("Unable to close connection", exception=repr(e))
 
-    def __publish(self):
+    def __publish(self, notification):
         try:
-            self._channel.basic_publish(exchange='', routing_key=settings.RABBIT_QUEUE, body=self._data)
+            self._channel.basic_publish(exchange='', routing_key=settings.RABBIT_QUEUE, body=notification)
             self._logger.debug("Published notification")
             return True
 
@@ -45,12 +43,12 @@ class Notification(object):
             self._logger.error("Unable to publish notification", exception=repr(e))
             return False
 
-    def send(self):
+    def send(self, notification):
         self._logger.debug("Sending notification")
         if not self.__connect():
             return False
 
-        if not self.__publish():
+        if not self.__publish(notification):
             return False
 
         self.__disconnect()

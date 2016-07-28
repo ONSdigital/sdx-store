@@ -10,7 +10,7 @@ from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from structlog import wrap_logger
-from notification import Notification
+from store_queue import StoreQueue
 import os
 
 logger = wrap_logger(logging.getLogger(__name__))
@@ -95,8 +95,7 @@ def save_response(survey_response, bound_logger):
 
 
 def queue_notification(logger, mongo_id):
-    notification = Notification(logger, mongo_id)
-    return notification.send()
+    return StoreQueue(logger).send(mongo_id)
 
 
 @app.route('/responses', methods=['POST'])
