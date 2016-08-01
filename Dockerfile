@@ -2,6 +2,7 @@ FROM onsdigital/flask-crypto
 
 ADD server.py /app/server.py
 ADD settings.py /app/settings.py
+ADD queue_publisher.py /app/queue_publisher.py
 ADD requirements.txt /app/requirements.txt
 ADD startup.sh /app/startup.sh
 
