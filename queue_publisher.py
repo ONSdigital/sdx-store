@@ -1,21 +1,22 @@
 import pika
-import settings
 
 
-class StoreQueue(object):
+class QueuePublisher(object):
 
-    def __init__(self, logger):
+    def __init__(self, logger, urls, queue):
         self._logger = logger
+        self._urls = urls
+        self._queue = queue
         self._connection = None
         self._channel = None
 
-    def __connect(self):
+    def _connect(self):
         self._logger.debug("Connecting to queue")
-        for url in settings.RABBIT_URLS:
+        for url in self._urls:
             try:
                 self._connection = pika.BlockingConnection(pika.URLParameters(url))
                 self._channel = self._connection.channel()
-                self._channel.queue_declare(queue=settings.RABBIT_QUEUE)
+                self._channel.queue_declare(queue=self._queue)
                 self._logger.debug("Connected to queue", url=url)
                 return True
 
@@ -25,7 +26,7 @@ class StoreQueue(object):
 
         return False
 
-    def __disconnect(self):
+    def _disconnect(self):
         try:
             self._connection.close()
             self._logger.debug("Disconnected from queue")
@@ -33,23 +34,23 @@ class StoreQueue(object):
         except Exception as e:
             self._logger.error("Unable to close connection", exception=repr(e))
 
-    def __publish(self, notification):
+    def _publish(self, message):
         try:
-            self._channel.basic_publish(exchange='', routing_key=settings.RABBIT_QUEUE, body=notification)
-            self._logger.debug("Published notification")
+            self._channel.basic_publish(exchange='', routing_key=self._queue, body=message)
+            self._logger.debug("Published message")
             return True
 
         except Exception as e:
-            self._logger.error("Unable to publish notification", exception=repr(e))
+            self._logger.error("Unable to publish message", exception=repr(e))
             return False
 
-    def send(self, notification):
-        self._logger.debug("Sending notification")
-        if not self.__connect():
+    def publish_message(self, message):
+        self._logger.debug("Sending message")
+        if not self._connect():
             return False
 
-        if not self.__publish(notification):
+        if not self._publish(message):
             return False
 
-        self.__disconnect()
+        self._disconnect()
         return True
