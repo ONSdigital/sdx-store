@@ -28,7 +28,8 @@ Start the sdx-store service using the following command:
 
 ## API
 
-There are three endpoints:
+There are four endpoints:
+ * `GET /healthcheck` - returns a json response with a key/value pairs describing the service state
  * `POST /responses` - store a json survey response
  * `GET /responses` - retrieve a set of survey responses matching the query parameters
  * `GET /responses/<mongo_id>` - retrieve a survey by id
