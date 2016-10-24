@@ -204,6 +204,11 @@ def do_queue():
     return jsonify(result="ok")
 
 
+@app.route('/healthcheck', methods=['GET'])
+def healthcheck():
+    return jsonify({'status': 'OK'})
+
+
 if __name__ == '__main__':
     # Startup
     logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
