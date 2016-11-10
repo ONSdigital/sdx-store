@@ -17,11 +17,11 @@ class QueuePublisher(object):
                 self._connection = pika.BlockingConnection(pika.URLParameters(url))
                 self._channel = self._connection.channel()
                 self._channel.queue_declare(queue=self._queue)
-                self._logger.debug("Connected to queue", url=url)
+                self._logger.debug("Connected to queue")
                 return True
 
             except pika.exceptions.AMQPConnectionError as e:
-                self._logger.error("Unable to connect to queue", exception=repr(e), url=url)
+                self._logger.error("Unable to connect to queue", exception=repr(e))
                 continue
 
         return False
