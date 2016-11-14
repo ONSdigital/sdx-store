@@ -52,9 +52,7 @@ class TestStoreService(unittest.TestCase):
                         pg.SQL['INSERT_DOC'], {'added_date': datetime.utcnow(),
                                                 'survey_response': psycopg2.extras.Json(item)})
 
-
-    # /responses POST
-
+    # /responses POST
     def test_empty_post_request(self):
         r = self.app.post(self.endpoint)
         self.assertEqual(400, r.status_code)

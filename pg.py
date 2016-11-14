@@ -64,6 +64,9 @@ SQL = {
 }
 
 
+db = None
+
+
 def connect(params):
     def factory():
         try:
@@ -81,12 +84,18 @@ def connect(params):
     return factory
 
 
-db = connect(
-    dict(host=app.config['DB_HOST'],
-         port=app.config['DB_PORT'],
-         database=app.config['DB_NAME'],
-         password=app.config['DB_PASSWORD'],
-         user=app.config['DB_USER']))
+def use_db(func):
+    def inner(*args, **kwargs):
+        global db
+        if not db:
+            db = connect(
+                dict(host=app.config['DB_HOST'],
+                     port=app.config['DB_PORT'],
+                     database=app.config['DB_NAME'],
+                     password=app.config['DB_PASSWORD'],
+                     user=app.config['DB_USER']))
+        return func(*args, **kwargs)
+    return inner
 
 
 def get_sql(select=True, path=None, operator=None, query_json=False):
@@ -113,6 +122,7 @@ def get_sql(select=True, path=None, operator=None, query_json=False):
             raise NotImplementedError
 
 
+@use_db
 def search(criteria):
     page = criteria['page'] - 1
     items_per_page = criteria['items_per_page']
@@ -138,6 +148,7 @@ def search(criteria):
             return []
 
 
+@use_db
 def count(criteria):
     query_json = criteria['query']['json']
     path = criteria['query']['path']
@@ -156,6 +167,7 @@ def count(criteria):
         return res[0]
 
 
+@use_db
 def save_response(survey_response, bound_logger):
     with db() as cursor:
         try:
