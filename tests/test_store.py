@@ -49,10 +49,11 @@ class TestStoreService(unittest.TestCase):
             with self.db_con() as cursor:
                 for item in [self.test_json, self.updated_json]:
                     cursor.execute(
-                        pg.SQL['INSERT_DOC'], {'added_date': datetime.utcnow(),
-                                                'survey_response': psycopg2.extras.Json(item)})
+                        pg.SQL['INSERT_DOC'], {
+                            'added_date': datetime.utcnow(),
+                            'survey_response': psycopg2.extras.Json(item)})
 
-    # /responses POST
+    # /responses POST
     def test_empty_post_request(self):
         r = self.app.post(self.endpoint)
         self.assertEqual(400, r.status_code)
@@ -102,8 +103,9 @@ class TestStoreService(unittest.TestCase):
         with mock.patch('pg.db', self.db_con):
             with self.db_con() as cursor:
                 cursor.execute(
-                    pg.SQL['INSERT_DOC'], {'added_date': datetime.utcnow(),
-                                            'survey_response': psycopg2.extras.Json(test_message)})
+                    pg.SQL['INSERT_DOC'], {
+                        'added_date': datetime.utcnow(),
+                        'survey_response': psycopg2.extras.Json(test_message)})
                 expected_id = str(cursor.fetchone()[0])
 
         with mock.patch('pg.db', self.db_con):
