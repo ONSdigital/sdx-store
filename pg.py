@@ -2,9 +2,7 @@ from datetime import datetime
 
 import psycopg2
 import psycopg2.extras
-
-from server import app
-
+import settings
 
 SQL = {
     "INSERT_DOC": """
@@ -89,11 +87,11 @@ def use_db(func):
         global db
         if not db:
             db = connect(
-                dict(host=app.config['DB_HOST'],
-                     port=app.config['DB_PORT'],
-                     database=app.config['DB_NAME'],
-                     password=app.config['DB_PASSWORD'],
-                     user=app.config['DB_USER']))
+                dict(host=settings.DB_HOST,
+                     port=settings.DB_PORT,
+                     database=settings.DB_NAME,
+                     password=settings.DB_PASSWORD,
+                     user=settings.DB_USER))
         return func(*args, **kwargs)
     return inner
 

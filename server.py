@@ -14,12 +14,6 @@ from queue_publisher import QueuePublisher
 logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
 
-app.config['DB_HOST'] = settings.DB_HOST
-app.config['DB_PORT'] = settings.DB_PORT
-app.config['DB_NAME'] = settings.DB_NAME
-app.config['DB_USER'] = settings.DB_USER
-app.config['DB_PASSWORD'] = settings.DB_PASSWORD
-
 schema = Schema({
     'survey_id': str,
     'form': str,
