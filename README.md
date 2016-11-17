@@ -6,7 +6,7 @@ Scalable service for storing SDX data (backed by PostgreSQL).
 
 ## Prerequisites
 
-A running instance of PostgreSQL. 
+A running instance of PostgreSQL 9.4 or newer. Override environment variables or use default values as defined in settings.py to connect to the database.
 
 ## Installation
 
