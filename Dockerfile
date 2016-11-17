@@ -8,6 +8,11 @@ ADD startup.sh /app/startup.sh
 
 RUN mkdir -p /app/logs
 
+RUN apt-get update
+RUN apt-get install -y python3-dev
+RUN apt-get install -y libpq-dev
+RUN apt-get install -y build-essential
+
 # set working directory to /app/
 WORKDIR /app/
 
