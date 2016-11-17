@@ -64,6 +64,12 @@ SQL = {
 
 db = None
 
+db_config = {'host': settings.DB_HOST,
+             'port': settings.DB_PORT,
+             'database': settings.DB_NAME,
+             'password': settings.DB_PASSWORD,
+             'user': settings.DB_USER}
+
 
 def connect(params):
     def factory():
@@ -82,16 +88,11 @@ def connect(params):
     return factory
 
 
-def use_db(func):
+def use_db(func=None):
     def inner(*args, **kwargs):
         global db
         if not db:
-            db = connect(
-                dict(host=settings.DB_HOST,
-                     port=settings.DB_PORT,
-                     database=settings.DB_NAME,
-                     password=settings.DB_PASSWORD,
-                     user=settings.DB_USER))
+            db = connect(db_config)
         return func(*args, **kwargs)
     return inner
 
@@ -118,6 +119,17 @@ def get_sql(select=True, path=None, operator=None, query_json=False):
                 return SQL.get("COUNT_SECOND_LEVEL")
         else:
             raise NotImplementedError
+
+
+def file_to_string(path):
+    with open(path, 'r') as f:
+        return f.read()
+
+
+@use_db
+def create_table():
+    with db() as cursor:
+        cursor.execute(file_to_string('./setup.sql'))
 
 
 @use_db

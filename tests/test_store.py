@@ -11,11 +11,6 @@ import psycopg2.extras
 import testing.postgresql
 
 
-def file_to_string(path):
-    with open(path, 'r') as f:
-        return f.read()
-
-
 class TestStoreService(unittest.TestCase):
     endpoint = "/responses"
     test_json = json.loads(test_message)
@@ -36,10 +31,9 @@ class TestStoreService(unittest.TestCase):
         # query the state of the database
         self.db_con = pg.connect(self.db_conf)
 
-        # Commit changes immediately to the database
-        with self.db_con() as cursor:
-            # Create the initial database structure
-            cursor.execute(file_to_string('./setup.sql'))
+        # Create the responses table
+        with mock.patch('pg.db', self.db_con):
+            pg.create_table()
 
     def tearDown(self):
         self.db.stop()
@@ -55,8 +49,9 @@ class TestStoreService(unittest.TestCase):
 
     # /responses POST
     def test_empty_post_request(self):
-        r = self.app.post(self.endpoint)
-        self.assertEqual(400, r.status_code)
+        with mock.patch('pg.db', self.db_con):
+            r = self.app.post(self.endpoint)
+            self.assertEqual(400, r.status_code)
 
     def test_save_response_adds_doc_and_returns_id(self):
         with mock.patch('pg.db', self.db_con):

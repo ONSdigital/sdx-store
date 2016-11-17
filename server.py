@@ -102,10 +102,15 @@ def get_search_criteria(page, per_page):
         "items_per_page": per_page,
 
         "query": {"json": True,
-                  "path": None,
+                  "path": '',
                   "operator": "eq",
                   "value": 0}
     }
+
+
+@app.before_first_request
+def _run_on_start():
+    pg.create_table()
 
 
 @app.route('/responses', methods=['GET'])
