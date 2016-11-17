@@ -154,6 +154,10 @@ def do_get_responses():
         search_criteria['query'].update({'json': False, 'path': 'added_date', 'operator': 'gte',
                                          'value': datetime.fromtimestamp(int(added_ms) / 1000.0)})
 
+    # select all responses
+    if not search_criteria['query']['path']:
+        search_criteria['query'].update({'json': False, 'path': 'id', 'operator': 'gt', 'value': 0})
+
     results = {}
     responses = []
 
