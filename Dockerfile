@@ -2,11 +2,18 @@ FROM onsdigital/flask-crypto
 
 ADD server.py /app/server.py
 ADD settings.py /app/settings.py
+ADD pg.py /app/pg.py
 ADD queue_publisher.py /app/queue_publisher.py
 ADD requirements.txt /app/requirements.txt
 ADD startup.sh /app/startup.sh
+ADD setup.sql /app/setup.sql
 
 RUN mkdir -p /app/logs
+
+RUN apt-get update
+RUN apt-get install -y python3-dev
+RUN apt-get install -y libpq-dev
+RUN apt-get install -y build-essential
 
 # set working directory to /app/
 WORKDIR /app/

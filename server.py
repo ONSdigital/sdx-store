@@ -1,21 +1,18 @@
-import settings
-import logging
-import logging.handlers
-from flask import Flask, request, jsonify, Response
 import json
-from pymongo import MongoClient
-import pymongo.errors
-from datetime import datetime
-from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
-from bson.objectid import ObjectId
-from bson.errors import InvalidId
-from structlog import wrap_logger
-from queue_publisher import QueuePublisher
+import logging.handlers
 import os
+from datetime import datetime
+
+from flask import Flask, request, jsonify, Response
+from structlog import wrap_logger
+from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
+
+import settings
+import pg
+from queue_publisher import QueuePublisher
 
 logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
-app.config['MONGODB_URL'] = settings.MONGODB_URL
 
 schema = Schema({
     'survey_id': str,
@@ -26,11 +23,6 @@ schema = Schema({
     'per_page': All(Coerce(int), Range(min=1, max=100)),
     'page': All(Coerce(int), Range(min=1))
 })
-
-
-def get_db_responses():
-    mongo_client = MongoClient(app.config['MONGODB_URL'])
-    return mongo_client.sdx_store.responses
 
 
 @app.errorhandler(400)
@@ -81,22 +73,9 @@ def json_response(content):
     return Response(output, mimetype='application/json')
 
 
-def save_response(survey_response, bound_logger):
-    doc = {}
-    doc['survey_response'] = survey_response
-    doc['added_date'] = datetime.utcnow()
-    try:
-        result = get_db_responses().insert_one(doc)
-        return str(result.inserted_id)
-
-    except pymongo.errors.OperationFailure as e:
-        bound_logger.error("Failed to store survey response", exception=str(e))
-        return None
-
-
-def queue_notification(logger, mongo_id):
+def queue_notification(logger, response_id):
     publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_QUEUE)
-    return publisher.publish_message(mongo_id)
+    return publisher.publish_message(response_id)
 
 
 @app.route('/responses', methods=['POST'])
@@ -105,7 +84,8 @@ def do_save_response():
     metadata = survey_response['metadata']
     bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'])
 
-    inserted_id = save_response(survey_response, bound_logger)
+    inserted_id = pg.save_response(survey_response, bound_logger)
+
     if inserted_id is None:
         return server_error("Unable to save response")
 
@@ -114,6 +94,23 @@ def do_save_response():
         return server_error("Unable to queue notification")
 
     return jsonify(result="ok")
+
+
+def get_search_criteria(page, per_page):
+    return {
+        "page": page,
+        "items_per_page": per_page,
+
+        "query": {"json": True,
+                  "path": '',
+                  "operator": "eq",
+                  "value": 0}
+    }
+
+
+@app.before_first_request
+def _run_on_start():
+    pg.create_table()
 
 
 @app.route('/responses', methods=['GET'])
@@ -142,46 +139,60 @@ def do_get_responses():
     else:
         per_page = int(per_page)
 
-    search_criteria = {}
+    search_criteria = get_search_criteria(page, per_page)
+
     if survey_id:
-        search_criteria['survey_response.survey_id'] = survey_id
+        search_criteria['query'].update({'path': 'survey_id', 'value': survey_id})
     if form:
-        search_criteria['survey_response.form'] = form
+        search_criteria['query'].update({'path': 'form', 'value': form})
     if ru_ref:
-        search_criteria['survey_response.metadata.ru_ref'] = ru_ref
+        search_criteria['query'].update({'path': '{metadata, ru_ref}', 'value': json.dumps(ru_ref)})
     if period:
-        search_criteria['survey_response.collection.period'] = period
+        search_criteria['query'].update({'path': '{collection, period}', 'value': json.dumps(period)})
+
     if added_ms:
-        search_criteria['added_date'] = {
-            "$gte": datetime.fromtimestamp(int(added_ms) / 1000.0)
-        }
+        search_criteria['query'].update({'json': False, 'path': 'added_date', 'operator': 'gte',
+                                         'value': datetime.fromtimestamp(int(added_ms) / 1000.0)})
+
+    # select all responses
+    if not search_criteria['query']['path']:
+        search_criteria['query'].update({'json': False, 'path': 'id', 'operator': 'gt', 'value': 0})
 
     results = {}
     responses = []
-    db_responses = get_db_responses()
-    count = db_responses.find(search_criteria).count()
-    results['total_hits'] = count
-    cursor = db_responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
-    for document in cursor:
-        document['_id'] = str(document['_id'])
+
+    results['total_hits'] = pg.count(search_criteria)
+
+    cursor = pg.search(search_criteria)
+
+    for item in cursor:
+        document = item[2]
+        document['_id'] = str(item[0])
         if added_ms:
-            document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
+            document['added_ms'] = int(item[1].strftime("%s")) * 1000
         responses.append(document)
 
     results['results'] = responses
     return json_response(results)
 
 
-@app.route('/responses/<mongo_id>', methods=['GET'])
-def do_get_response(mongo_id):
+@app.route('/responses/<response_id>', methods=['GET'])
+def do_get_response(response_id):
     try:
-        result = get_db_responses().find_one({"_id": ObjectId(mongo_id)})
-        if result:
-            result['_id'] = str(result['_id'])
-            return json_response(result)
+        isinstance(int(response_id), int)
+    except ValueError:
+        return jsonify({}), 400
 
-    except InvalidId as e:
-        return client_error(repr(e))
+    try:
+        with pg.db() as cursor:
+            cursor.execute(pg.SQL['SELECT_EQ_ID'], (int(response_id),))
+
+            result = cursor.fetchone()
+
+            if result:
+                result = json.loads(result[2])
+                result['_id'] = response_id
+                return json_response(result)
 
     except Exception as e:
         return server_error(repr(e))
@@ -191,13 +202,13 @@ def do_get_response(mongo_id):
 
 @app.route('/queue', methods=['POST'])
 def do_queue():
-    mongo_id = request.get_json(force=True)['id']
+    response_id = request.get_json(force=True)['id']
     # check document exists with id
-    result = do_get_response(mongo_id)
+    result = do_get_response(response_id)
     if result.status_code != 200:
         return result
 
-    queued = queue_notification(logger, mongo_id)
+    queued = queue_notification(logger, response_id)
     if queued is False:
         return server_error("Unable to queue notification")
 

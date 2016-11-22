@@ -2,13 +2,11 @@
 
 [![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store)
 
-Scalable service for storing SDX data (backed by MongoDB).
+Scalable service for storing SDX data (backed by PostgreSQL).
 
 ## Prerequisites
 
-A running instance of MongoDB. The service connects to `mongodb://localhost:27017` by default.
-
-To override this export a `MONGODB_URL` environment variable.
+A running instance of PostgreSQL 9.4 or newer. Override environment variables or use default values as defined in settings.py to connect to the database.
 
 ## Installation
 
@@ -32,7 +30,7 @@ There are four endpoints:
  * `GET /healthcheck` - returns a json response with key/value pairs describing the service state
  * `POST /responses` - store a json survey response
  * `GET /responses` - retrieve a set of survey responses matching the query parameters
- * `GET /responses/<mongo_id>` - retrieve a survey by id
+ * `GET /responses/<response_id>` - retrieve a survey by id
 
 ### Query parameters
 
