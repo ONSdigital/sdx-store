@@ -147,7 +147,7 @@ def create_table():
         with db() as cursor:
             try:
                 cursor.execute(SQL[idx])
-            except psycopg2.ProgrammingError: # index exists
+            except psycopg2.ProgrammingError:  # index exists
                 pass
 
 
