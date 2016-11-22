@@ -58,6 +58,18 @@ SQL = {
     "COUNT_SECOND_LEVEL": """
         SELECT COUNT(*) FROM responses
         WHERE survey_response #> %s = %s
+    """,
+
+    "CREATE_SURVEY_ID_INDEX": """
+        CREATE INDEX idx_survey_id ON responses ((survey_response->>'survey_id'))
+    """,
+
+    "CREATE_METADATA_RU_REF": """
+        CREATE INDEX idx_metadata_ru_ref ON responses ((survey_response#>'{metadata, ru_ref}'))
+    """,
+
+    "CREATE_COLLECTION_PERIOD_INDEX": """
+        CREATE INDEX idx_collection_period ON responses ((survey_response#>'{collection, period}'))
     """
 }
 
@@ -130,6 +142,13 @@ def file_to_string(path):
 def create_table():
     with db() as cursor:
         cursor.execute(file_to_string('./setup.sql'))
+
+    for idx in ("CREATE_SURVEY_ID_INDEX", "CREATE_METADATA_RU_REF", "CREATE_COLLECTION_PERIOD_INDEX"):
+        with db() as cursor:
+            try:
+                cursor.execute(SQL[idx])
+            except psycopg2.ProgrammingError: # index exists
+                pass
 
 
 @use_db
