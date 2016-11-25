@@ -27,12 +27,12 @@ class TestStoreService(unittest.TestCase):
     def test_save_response_adds_doc_and_returns_id(self):
         mock_db = mongomock.MongoClient().db.collection
         with mock.patch('server.get_db_responses', return_value=mock_db):
-            mongo_id = server.save_response(test_message, None)
+            mongo_id, invalid_flag = server.save_response(None, json.loads(test_message))
             self.assertEqual(1, mock_db.count())
             self.assertIsNotNone(mongo_id)
 
     def test_response_not_saved_returns_500(self):
-        with mock.patch('server.save_response', return_value=None):
+        with mock.patch('server.save_response', return_value=(None,False)):
             r = self.app.post(self.endpoint, data=test_message)
             self.assertEqual(500, r.status_code)
 
