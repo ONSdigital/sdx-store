@@ -28,8 +28,11 @@ schema = Schema({
 })
 
 
-def get_db_responses():
+def get_db_responses(invalid_flag=False):
     mongo_client = MongoClient(app.config['MONGODB_URL'])
+    if invalid_flag:
+        return mongo_client.sdx_store.invalid_responses
+
     return mongo_client.sdx_store.responses
 
 
@@ -81,17 +84,23 @@ def json_response(content):
     return Response(output, mimetype='application/json')
 
 
-def save_response(survey_response, bound_logger):
+def save_response(bound_logger, survey_response):
     doc = {}
     doc['survey_response'] = survey_response
     doc['added_date'] = datetime.utcnow()
+
+    invalid_flag = False
+
+    if 'invalid' in survey_response:
+        invalid_flag = survey_response['invalid']
+
     try:
-        result = get_db_responses().insert_one(doc)
-        return str(result.inserted_id)
+        result = get_db_responses(invalid_flag).insert_one(doc)
+        return str(result.inserted_id), invalid_flag
 
     except pymongo.errors.OperationFailure as e:
         bound_logger.error("Failed to store survey response", exception=str(e))
-        return None
+        return None, False
 
 
 def queue_notification(logger, mongo_id):
@@ -105,9 +114,13 @@ def do_save_response():
     metadata = survey_response['metadata']
     bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'])
 
-    inserted_id = save_response(survey_response, bound_logger)
+    inserted_id, invalid_flag = save_response(bound_logger, survey_response)
     if inserted_id is None:
         return server_error("Unable to save response")
+
+    if invalid_flag is True:
+        bound_logger.info("Invalid response saved, no notification queued", inserted_id=inserted_id)
+        return jsonify(result="false")
 
     queued = queue_notification(bound_logger, inserted_id)
     if queued is False:
