@@ -32,7 +32,7 @@ class TestStoreService(unittest.TestCase):
             self.assertIsNotNone(mongo_id)
 
     def test_response_not_saved_returns_500(self):
-        with mock.patch('server.save_response', return_value=(None,False)):
+        with mock.patch('server.save_response', return_value=(None, False)):
             r = self.app.post(self.endpoint, data=test_message)
             self.assertEqual(500, r.status_code)
 

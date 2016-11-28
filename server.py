@@ -89,7 +89,7 @@ def save_response(bound_logger, survey_response):
     doc['survey_response'] = survey_response
     doc['added_date'] = datetime.utcnow()
 
-    invalid_flag=False
+    invalid_flag = False
 
     if 'invalid' in survey_response:
         invalid_flag = survey_response['invalid']
