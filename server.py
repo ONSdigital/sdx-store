@@ -127,7 +127,7 @@ def do_save_response():
         bound_logger.info("Invalid response saved, no notification queued", inserted_id=inserted_id)
         return jsonify(result="false")
 
-    if survey_response['survey_id'] == '0':
+    if survey_response['survey_id'] == 'census':
         queued = queue_ctp_notification(bound_logger, inserted_id)
     else:
         queued = queue_rrm_notification(bound_logger, inserted_id)
@@ -221,7 +221,7 @@ def do_queue():
 
     response = json.loads(result.response[0].decode('utf-8'))
 
-    if response['survey_response']['survey_id'] == '0':
+    if response['survey_response']['survey_id'] == 'census':
         queued = queue_ctp_notification(logger, mongo_id)
     else:
         queued = queue_rrm_notification(logger, mongo_id)
