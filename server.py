@@ -103,8 +103,13 @@ def save_response(bound_logger, survey_response):
         return None, False
 
 
-def queue_notification(logger, mongo_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_QUEUE)
+def queue_rrm_notification(logger, mongo_id):
+    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_RRM_QUEUE)
+    return publisher.publish_message(mongo_id)
+
+
+def queue_ctp_notification(logger, mongo_id):
+    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CTP_QUEUE)
     return publisher.publish_message(mongo_id)
 
 
@@ -122,7 +127,11 @@ def do_save_response():
         bound_logger.info("Invalid response saved, no notification queued", inserted_id=inserted_id)
         return jsonify(result="false")
 
-    queued = queue_notification(bound_logger, inserted_id)
+    if survey_response['survey_id'] == 'census':
+        queued = queue_ctp_notification(bound_logger, inserted_id)
+    else:
+        queued = queue_rrm_notification(bound_logger, inserted_id)
+
     if queued is False:
         return server_error("Unable to queue notification")
 
@@ -210,7 +219,13 @@ def do_queue():
     if result.status_code != 200:
         return result
 
-    queued = queue_notification(logger, mongo_id)
+    response = json.loads(result.response[0].decode('utf-8'))
+
+    if response['survey_response']['survey_id'] == 'census':
+        queued = queue_ctp_notification(logger, mongo_id)
+    else:
+        queued = queue_rrm_notification(logger, mongo_id)
+
     if queued is False:
         return server_error("Unable to queue notification")
 
