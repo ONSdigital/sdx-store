@@ -104,7 +104,7 @@ def save_response(bound_logger, survey_response):
 
 
 def queue_rrm_notification(logger, mongo_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_RRM_QUEUE)
+    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_QUEUE)
     return publisher.publish_message(mongo_id)
 
 
