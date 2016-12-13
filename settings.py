@@ -5,7 +5,7 @@ LOGGING_FORMAT = "%(asctime)s|%(levelname)s: sdx-store: %(message)s"
 LOGGING_LEVEL = logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-RABBIT_RRM_QUEUE = os.getenv('RABBIT_RRM_QUEUE', 'sdx-rrm-survey-notifications')
+RABBIT_QUEUE = os.getenv('RABBIT_QUEUE', 'sdx-survey-notifications')
 RABBIT_CTP_QUEUE = os.getenv('RABBIT_CTP_QUEUE', 'sdx-ctp-survey-notifications')
 
 RABBIT_URL = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
