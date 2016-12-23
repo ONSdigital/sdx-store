@@ -26,8 +26,9 @@ class TestStoreService(unittest.TestCase):
 
     def test_save_response_adds_doc_and_returns_id(self):
         mock_db = mongomock.MongoClient().db.collection
+        logger = wrap_logger(logging.getLogger("TEST"))
         with mock.patch('server.get_db_responses', return_value=mock_db):
-            mongo_id, invalid_flag = server.save_response(None, json.loads(test_message))
+            mongo_id, invalid_flag = server.save_response(logger, json.loads(test_message))
             self.assertEqual(1, mock_db.count())
             self.assertIsNotNone(mongo_id)
 
