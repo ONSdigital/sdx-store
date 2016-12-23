@@ -4,6 +4,8 @@ from tests.test_data import test_message, updated_message
 import mock
 import mongomock
 import json
+import logging
+from structlog import wrap_logger
 
 
 class TestStoreService(unittest.TestCase):
