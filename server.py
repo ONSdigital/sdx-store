@@ -96,7 +96,7 @@ def save_response(bound_logger, survey_response):
 
     try:
         result = get_db_responses(invalid_flag).insert_one(doc)
-        bound_logger.info("Response saved", inserted_id=inserted_id, invalid=invalid_flag)
+        bound_logger.info("Response saved", inserted_id=result.inserted_id, invalid=invalid_flag)
         return str(result.inserted_id), invalid_flag
 
     except pymongo.errors.OperationFailure as e:
