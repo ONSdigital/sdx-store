@@ -96,6 +96,7 @@ def save_response(bound_logger, survey_response):
 
     try:
         result = get_db_responses(invalid_flag).insert_one(doc)
+        bound_logger.info("Response saved", inserted_id=inserted_id, invalid=invalid_flag)
         return str(result.inserted_id), invalid_flag
 
     except pymongo.errors.OperationFailure as e:
@@ -112,14 +113,13 @@ def queue_notification(logger, mongo_id):
 def do_save_response():
     survey_response = request.get_json(force=True)
     metadata = survey_response['metadata']
-    bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'])
+    bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'], tx_id=survey_response['tx_id'])
 
     inserted_id, invalid_flag = save_response(bound_logger, survey_response)
     if inserted_id is None:
         return server_error("Unable to save response")
 
     if invalid_flag is True:
-        bound_logger.info("Invalid response saved, no notification queued", inserted_id=inserted_id)
         return jsonify(result="false")
 
     queued = queue_notification(bound_logger, inserted_id)
