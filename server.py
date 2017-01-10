@@ -13,6 +13,7 @@ from structlog import wrap_logger
 from queue_publisher import QueuePublisher
 import os
 
+logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
 app.config['MONGODB_URL'] = settings.MONGODB_URL
@@ -239,7 +240,6 @@ def healthcheck():
 
 if __name__ == '__main__':
     # Startup
-    logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
     logger.debug("START")
 
     port = int(os.getenv("PORT"))
