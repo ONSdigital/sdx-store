@@ -134,7 +134,7 @@ def do_save_response():
 
     if survey_response['survey_id'] == 'census':
         queued = queue_ctp_notification(bound_logger, inserted_id)
-    elif survey_response['survey_id'] == '139':
+    elif survey_response['survey_id'] == '144':
         queued = queue_cora_notification(bound_logger, inserted_id)
     else:
         queued = queue_cs_notification(bound_logger, inserted_id)
@@ -230,7 +230,7 @@ def do_queue():
 
     if response['survey_response']['survey_id'] == 'census':
         queued = queue_ctp_notification(logger, mongo_id)
-    elif response['survey_response']['survey_id'] == '139':
+    elif response['survey_response']['survey_id'] == '144':
         queued = queue_cora_notification(logger,mongo_id)
     else:
         queued = queue_cs_notification(logger, mongo_id)
