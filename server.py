@@ -114,6 +114,7 @@ def queue_ctp_notification(logger, mongo_id):
     publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CTP_QUEUE)
     return publisher.publish_message(mongo_id)
 
+
 def queue_cora_notification(logger, mongo_id):
     publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CORA_QUEUE)
     return publisher.publish_message(mongo_id)
@@ -231,7 +232,7 @@ def do_queue():
     if response['survey_response']['survey_id'] == 'census':
         queued = queue_ctp_notification(logger, mongo_id)
     elif response['survey_response']['survey_id'] == '144':
-        queued = queue_cora_notification(logger,mongo_id)
+        queued = queue_cora_notification(logger, mongo_id)
     else:
         queued = queue_cs_notification(logger, mongo_id)
 
