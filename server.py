@@ -105,13 +105,17 @@ def save_response(bound_logger, survey_response):
         return None, False
 
 
-def queue_rrm_notification(logger, mongo_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_QUEUE)
+def queue_cs_notification(logger, mongo_id):
+    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CS_QUEUE)
     return publisher.publish_message(mongo_id)
 
 
 def queue_ctp_notification(logger, mongo_id):
     publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CTP_QUEUE)
+    return publisher.publish_message(mongo_id)
+
+def queue_cora_notification(logger, mongo_id):
+    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CORA_QUEUE)
     return publisher.publish_message(mongo_id)
 
 
@@ -130,8 +134,10 @@ def do_save_response():
 
     if survey_response['survey_id'] == 'census':
         queued = queue_ctp_notification(bound_logger, inserted_id)
+    elif survey_response['survey_id'] == '139':
+        queued = queue_cora_notification(bound_logger, inserted_id)
     else:
-        queued = queue_rrm_notification(bound_logger, inserted_id)
+        queued = queue_cs_notification(bound_logger, inserted_id)
 
     if queued is False:
         return server_error("Unable to queue notification")
@@ -224,8 +230,10 @@ def do_queue():
 
     if response['survey_response']['survey_id'] == 'census':
         queued = queue_ctp_notification(logger, mongo_id)
+    elif response['survey_response']['survey_id'] == '139':
+        queued = queue_cora_notification(logger,mongo_id)
     else:
-        queued = queue_rrm_notification(logger, mongo_id)
+        queued = queue_cs_notification(logger, mongo_id)
 
     if queued is False:
         return server_error("Unable to queue notification")

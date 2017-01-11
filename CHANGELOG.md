@@ -4,6 +4,7 @@
   - Add logging of save action
   - Update python library '_requests_': `2.10.0` -> `2.12.4`
   - Hotfix for default queue names
+  - Add support for new downstream CORA queue
 
 ### 1.3.1 2016-12-13
   - Fix #18 incorrect queue names
