@@ -11,7 +11,7 @@ class QueuePublisher(object):
         self._channel = None
 
     def _connect(self):
-        self._logger.debug("Connecting to queue")
+        self._logger.debug("Connecting to queue", queue=self._queue)
         for url in self._urls:
             try:
                 self._connection = pika.BlockingConnection(pika.URLParameters(url))
