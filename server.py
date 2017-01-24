@@ -147,12 +147,16 @@ def do_save_response():
 
 
 @app.route('/responses', methods=['GET'])
-def do_get_responses():
+@app.route('/responses/<invalid>', methods=['GET'])
+def do_get_responses(invalid=False):
     try:
         schema(request.args)
     except MultipleInvalid as e:
         logger.error("Request args failed schema validation", error=str(e))
         return client_error(repr(e))
+
+    if invalid:
+        invalid = True
 
     survey_id = request.args.get('survey_id')
     form = request.args.get('form')
@@ -188,7 +192,7 @@ def do_get_responses():
 
     results = {}
     responses = []
-    db_responses = get_db_responses()
+    db_responses = get_db_responses(invalid_flag=invalid)
     count = db_responses.find(search_criteria).count()
     results['total_hits'] = count
     cursor = db_responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
