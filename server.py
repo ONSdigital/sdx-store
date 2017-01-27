@@ -146,9 +146,7 @@ def do_save_response():
     return jsonify(result="ok")
 
 
-@app.route('/responses', methods=['GET'])
-@app.route('/responses/<invalid>', methods=['GET'])
-def do_get_responses(invalid=False):
+def fetch_responses(invalid=False):
     try:
         schema(request.args)
     except MultipleInvalid as e:
@@ -204,6 +202,16 @@ def do_get_responses(invalid=False):
 
     results['results'] = responses
     return json_response(results)
+
+
+@app.route('/invalid-responses', methods=['GET'])
+def do_get_invalid_responses():
+    return fetch_responses(True)
+
+
+@app.route('/responses', methods=['GET'])
+def do_get_responses():
+    return fetch_responses(False)
 
 
 @app.route('/responses/<mongo_id>', methods=['GET'])
