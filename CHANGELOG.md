@@ -1,5 +1,5 @@
 ### Unreleased
-  - Add view for invalid transactions in store
+  - Add new `/invalid-responses` endpoint for viewing invalid submissions
   - Add change log
   - Add transaction ID (`tx_id`) to logging
   - Add logging of save action
