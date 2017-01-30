@@ -3,8 +3,6 @@ import logging
 import logging.handlers
 from flask import Flask, request, jsonify, Response
 import json
-from pymongo import MongoClient
-import pymongo.errors
 from datetime import datetime
 from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
@@ -12,6 +10,8 @@ from bson.errors import InvalidId
 from structlog import wrap_logger
 from queue_publisher import QueuePublisher
 import os
+
+from mongostore import get_db_responses
 
 logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
@@ -27,14 +27,6 @@ schema = Schema({
     'per_page': All(Coerce(int), Range(min=1, max=100)),
     'page': All(Coerce(int), Range(min=1))
 })
-
-
-def get_db_responses(invalid_flag=False):
-    mongo_client = MongoClient(app.config['MONGODB_URL'])
-    if invalid_flag:
-        return mongo_client.sdx_store.invalid_responses
-
-    return mongo_client.sdx_store.responses
 
 
 @app.errorhandler(400)
@@ -95,14 +87,13 @@ def save_response(bound_logger, survey_response):
     if 'invalid' in survey_response:
         invalid_flag = survey_response['invalid']
 
-    try:
-        result = get_db_responses(invalid_flag).insert_one(doc)
+    responses = get_db_responses(app.config, bound_logger, invalid_flag)
+    if responses is None:
+        return None, False
+    else:
+        result = responses.insert_one(doc)
         bound_logger.info("Response saved", inserted_id=result.inserted_id, invalid=invalid_flag)
         return str(result.inserted_id), invalid_flag
-
-    except pymongo.errors.OperationFailure as e:
-        bound_logger.error("Failed to store survey response", exception=str(e))
-        return None, False
 
 
 def queue_cs_notification(logger, mongo_id):
