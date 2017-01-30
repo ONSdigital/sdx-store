@@ -5,7 +5,33 @@ import psycopg2.extensions
 import psycopg2.pool
 import testing.postgresql
 
+from pgstore import SQLTemplate
 from pgstore import ProcessSafePoolManager
+
+
+@testing.postgresql.skipIfNotInstalled
+class SQLTests(unittest.TestCase):
+    factory = testing.postgresql.PostgresqlFactory(cache_initialized_db=True)
+
+    def test_create(self):
+        pm = ProcessSafePoolManager(**self.db.dsn())
+        try:
+            con = pm.getconn()
+            cur = con.cursor()
+            cur = cur.execute(SQLTemplate.create)
+            con.commit()
+        finally:
+            pm.putconn(con)
+
+    def setUp(self):
+        self.db = self.factory()
+
+    def tearDown(self):
+        self.db.stop()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.factory.clear_cache()
 
 
 @testing.postgresql.skipIfNotInstalled
@@ -33,11 +59,11 @@ class PoolManagerTests(unittest.TestCase):
         pm = ProcessSafePoolManager(**self.db.dsn())
         self.assertEqual(os.getpid(), pm.pidLastSeen)
 
-        con = pm.getconn()
+        pm.getconn()
         pools = [pm._pool]
 
         pm.pidLastSeen -= 1
-        con = pm.getconn()
+        pm.getconn()
         pools.append(pm._pool)
 
         self.assertIsNot(pools[0], pools[1])
