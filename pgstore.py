@@ -1,13 +1,14 @@
 import os
 import textwrap
 
+from psycopg2.extras import Json
 from psycopg2.pool import ThreadedConnectionPool
 
 
 class SQLOperation:
 
     @staticmethod
-    def sql(**kwargs):
+    def sql():
         raise NotImplementedError
 
     def __init__(self, **kwargs):
@@ -20,7 +21,8 @@ class SQLOperation:
 
         """
         cur = con.cursor()
-        cur.execute(self.sql(**self.kwargs))
+        print(cur.mogrify(self.sql(), self.kwargs))
+        cur.execute(self.sql(), self.kwargs)
         con.commit()
         return cur
 
@@ -28,13 +30,32 @@ class SQLOperation:
 class CreateResponseTable(SQLOperation):
 
     @staticmethod
-    def sql(**kwargs):
+    def sql():
         return textwrap.dedent("""
         CREATE TABLE IF NOT EXISTS responses (
           id uuid PRIMARY KEY,
           ts timestamp WITH time zone,
           data jsonb
         )""")
+
+    def run(self, con):
+        cur = super().run(con)
+        cur.close()
+
+
+class InsertResponse(SQLOperation):
+
+    @staticmethod
+    def sql(**kwargs):
+        return textwrap.dedent("""
+        INSERT INTO responses (id, data)
+          VALUES (%(id)s, %(data)s)
+        )""")
+
+    def __init__(self, **kwargs):
+        kwargs["data"] = Json(kwargs.get("data", "{}"))
+        print(kwargs)
+        super().__init__(**kwargs) 
 
     def run(self, con):
         cur = super().run(con)

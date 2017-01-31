@@ -1,3 +1,4 @@
+import json
 import os
 import unittest
 
@@ -6,6 +7,7 @@ import psycopg2.pool
 import testing.postgresql
 
 from pgstore import CreateResponseTable
+from pgstore import InsertResponse
 from pgstore import ProcessSafePoolManager
 
 """
@@ -16,6 +18,16 @@ from pgstore import ProcessSafePoolManager
 @testing.postgresql.skipIfNotInstalled
 class SQLTests(unittest.TestCase):
     factory = testing.postgresql.PostgresqlFactory(cache_initialized_db=True)
+
+    def setUp(self):
+        self.db = self.factory()
+
+    def tearDown(self):
+        self.db.stop()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.factory.clear_cache()
 
     def test_create(self):
         pm = ProcessSafePoolManager(**self.db.dsn())
@@ -33,15 +45,25 @@ class SQLTests(unittest.TestCase):
         finally:
             pm.putconn(con)
 
-    def setUp(self):
-        self.db = self.factory()
+    def test_response_insertion(self):
+        pm = ProcessSafePoolManager(**self.db.dsn())
+        try:
+            con = pm.getconn()
+            CreateResponseTable().run(con)
+            InsertResponse(
+                id="9bca1e45-310b-4677-bb86-255da5c7eb34",
+                data=json.dumps({
+                    "survey_id": "144",
+                    "metadata": {
+                        "user_id": "sdx",
+                        "ru_ref": "12346789012A"
+                    },
+                    "data": {}
+                })
+            ).run(con)
 
-    def tearDown(self):
-        self.db.stop()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.factory.clear_cache()
+        finally:
+            pm.putconn(con)
 
 
 @testing.postgresql.skipIfNotInstalled
