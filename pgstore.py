@@ -1,16 +1,44 @@
 import os
+import textwrap
+
 from psycopg2.pool import ThreadedConnectionPool
 
 
-class SQLTemplate:
+class SQLOperation:
 
-    create = """
-    CREATE TABLE IF NOT EXISTS responses (
-      id uuid PRIMARY KEY,
-      ts timestamp WITH time zone,
-      data jsonb
-    )
-    """
+    @staticmethod
+    def sql(**kwargs):
+        raise NotImplementedError
+
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def run(self, con):
+        """
+        Execute the SQL defined by this class.
+        Returns the cursor for data extraction.
+
+        """
+        cur = con.cursor()
+        cur.execute(self.sql(**self.kwargs))
+        con.commit()
+        return cur
+
+
+class CreateResponseTable(SQLOperation):
+
+    @staticmethod
+    def sql(**kwargs):
+        return textwrap.dedent("""
+        CREATE TABLE IF NOT EXISTS responses (
+          id uuid PRIMARY KEY,
+          ts timestamp WITH time zone,
+          data jsonb
+        )""")
+
+    def run(self, con):
+        cur = super().run(con)
+        cur.close()
 
 
 class ProcessSafePoolManager:

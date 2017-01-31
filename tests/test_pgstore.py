@@ -5,8 +5,12 @@ import psycopg2.extensions
 import psycopg2.pool
 import testing.postgresql
 
-from pgstore import SQLTemplate
+from pgstore import CreateResponseTable
 from pgstore import ProcessSafePoolManager
+
+"""
+"tx_id": "9bca1e45-310b-4677-bb86-255da5c7eb34",
+"""
 
 
 @testing.postgresql.skipIfNotInstalled
@@ -17,9 +21,15 @@ class SQLTests(unittest.TestCase):
         pm = ProcessSafePoolManager(**self.db.dsn())
         try:
             con = pm.getconn()
+            CreateResponseTable().run(con)
+
             cur = con.cursor()
-            cur = cur.execute(SQLTemplate.create)
-            con.commit()
+            cur.execute("select * from pg_catalog.pg_tables")
+            check = schema, name, owner, space, hasIndexes, hasRules, hasTriggers, rowSec = (
+                "public", "responses", "postgres", None, True, False, False, False
+            )
+            self.assertIn(check, cur.fetchall())
+
         finally:
             pm.putconn(con)
 
