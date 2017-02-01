@@ -52,14 +52,14 @@ class SQLTests(unittest.TestCase):
             CreateResponseTable().run(con)
             InsertResponse(
                 id="9bca1e45-310b-4677-bb86-255da5c7eb34",
-                data=json.dumps({
+                data={
                     "survey_id": "144",
                     "metadata": {
                         "user_id": "sdx",
                         "ru_ref": "12346789012A"
                     },
                     "data": {}
-                })
+                }
             ).run(con)
 
         finally:

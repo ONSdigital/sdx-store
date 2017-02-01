@@ -50,7 +50,7 @@ class InsertResponse(SQLOperation):
         return textwrap.dedent("""
         INSERT INTO responses (id, data)
           VALUES (%(id)s, %(data)s)
-        )""")
+        """)
 
     def __init__(self, **kwargs):
         kwargs["data"] = Json(kwargs.get("data", "{}"))
