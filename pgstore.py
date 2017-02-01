@@ -1,4 +1,3 @@
-from collections import defaultdict
 from collections import OrderedDict
 import os
 import textwrap
@@ -7,99 +6,96 @@ from psycopg2.extras import Json
 from psycopg2.pool import ThreadedConnectionPool
 
 
-class SQLOperation:
+class ResponseStore:
 
-    cols = ("id", "ts", "valid", "data")
+    class SQLOperation:
+        cols = ("id", "ts", "valid", "data")
 
-    @staticmethod
-    def sql():
-        raise NotImplementedError
+        @staticmethod
+        def sql():
+            raise NotImplementedError
 
-    def __init__(self, **kwargs):
-        self.params = {c: kwargs.get(c) for c in self.cols}
+        def __init__(self, **kwargs):
+            self.params = {c: kwargs.get(c) for c in self.cols}
 
-    def run(self, con):
-        """
-        Execute the SQL defined by this class.
-        Returns the cursor for data extraction.
+        def run(self, con):
+            """
+            Execute the SQL defined by this class.
+            Returns the cursor for data extraction.
 
-        """
-        cur = con.cursor()
-        cur.execute(self.sql(), self.params)
-        con.commit()
-        return cur
+            """
+            cur = con.cursor()
+            cur.execute(self.sql(), self.params)
+            con.commit()
+            return cur
 
+    class Creation(SQLOperation):
 
-class CreateResponseTable(SQLOperation):
+        @staticmethod
+        def sql():
+            return textwrap.dedent("""
+            CREATE TABLE IF NOT EXISTS responses (
+              id uuid PRIMARY KEY,
+              ts timestamp WITH time zone DEFAULT NOW(),
+              valid boolean DEFAULT NULL,
+              data jsonb
+            )""")
 
-    @staticmethod
-    def sql():
-        return textwrap.dedent("""
-        CREATE TABLE IF NOT EXISTS responses (
-          id uuid PRIMARY KEY,
-          ts timestamp WITH time zone DEFAULT NOW(),
-          valid boolean DEFAULT NULL,
-          data jsonb
-        )""")
+        def run(self, con):
+            cur = super().run(con)
+            cur.close()
 
-    def run(self, con):
-        cur = super().run(con)
-        cur.close()
+    class Insertion(SQLOperation):
 
+        @staticmethod
+        def sql(**kwargs):
+            return textwrap.dedent("""
+            INSERT INTO responses (id, valid, data)
+              VALUES (%(id)s, %(valid)s, %(data)s)
+            """)
 
-class InsertResponse(SQLOperation):
+        def __init__(self, **kwargs):
+            kwargs["data"] = Json(kwargs.get("data", "{}"))
+            super().__init__(**kwargs)
 
-    @staticmethod
-    def sql(**kwargs):
-        return textwrap.dedent("""
-        INSERT INTO responses (id, valid, data)
-          VALUES (%(id)s, %(valid)s, %(data)s)
-        """)
+        def run(self, con):
+            cur = super().run(con)
+            cur.close()
 
-    def __init__(self, **kwargs):
-        kwargs["data"] = Json(kwargs.get("data", "{}"))
-        super().__init__(**kwargs) 
+    class Selection(SQLOperation):
 
-    def run(self, con):
-        cur = super().run(con)
-        cur.close()
+        @staticmethod
+        def sql(**kwargs):
+            return textwrap.dedent("""
+            SELECT id, ts, valid, data FROM responses
+              WHERE id = %(id)s
+            """)
 
+        def run(self, con):
+            cur = super().run(con)
+            rv = OrderedDict(
+                (k, v) for k, v in zip(self.cols, cur.fetchone())
+            )
+            cur.close()
+            return rv
 
-class SelectResponse(SQLOperation):
+    class Filter(SQLOperation):
 
-    @staticmethod
-    def sql(**kwargs):
-        return textwrap.dedent("""
-        SELECT id, ts, valid, data FROM responses
-          WHERE id = %(id)s
-        """)
+        @staticmethod
+        def sql(**kwargs):
+            return textwrap.dedent("""
+            SELECT id, ts, valid, data FROM responses
+              WHERE valid = %(valid)s
+            """)
 
-    def run(self, con):
-        cur = super().run(con)
-        rv = OrderedDict(
-            (k, v) for k, v in zip(self.cols, cur.fetchone())
-        )
-        cur.close()
-        return rv
-
-
-class ListResponses(SQLOperation):
-
-    @staticmethod
-    def sql(**kwargs):
-        return textwrap.dedent("""
-        SELECT id, ts, valid, data FROM responses
-          WHERE valid = %(valid)s
-        """)
-
-    def run(self, con):
-        cur = super().run(con)
-        rv = [
-            OrderedDict((k, v) for k, v in zip(self.cols, row))
-            for row in cur.fetchall()
-        ]
-        cur.close()
-        return rv
+        def run(self, con):
+            cur = super().run(con)
+            rv = [
+                OrderedDict((k, v) for k, v in zip(self.cols, row))
+                for row in cur.fetchall()
+            ]
+            cur.close()
+            return rv
 
 
 class ProcessSafePoolManager:

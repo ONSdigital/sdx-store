@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import datetime
-import json
 import os
 import unittest
 
@@ -8,15 +7,8 @@ import psycopg2.extensions
 import psycopg2.pool
 import testing.postgresql
 
-from pgstore import CreateResponseTable
-from pgstore import InsertResponse
-from pgstore import SelectResponse
-from pgstore import ListResponses
+from pgstore import ResponseStore
 from pgstore import ProcessSafePoolManager
-
-"""
-"tx_id": "9bca1e45-310b-4677-bb86-255da5c7eb34",
-"""
 
 
 @testing.postgresql.skipIfNotInstalled
@@ -37,7 +29,7 @@ class SQLTests(unittest.TestCase):
         pm = ProcessSafePoolManager(**self.db.dsn())
         try:
             con = pm.getconn()
-            CreateResponseTable().run(con)
+            ResponseStore.Creation().run(con)
 
             cur = con.cursor()
             cur.execute("select * from pg_catalog.pg_tables")
@@ -53,8 +45,8 @@ class SQLTests(unittest.TestCase):
         pm = ProcessSafePoolManager(**self.db.dsn())
         try:
             con = pm.getconn()
-            CreateResponseTable().run(con)
-            InsertResponse(
+            ResponseStore.Creation().run(con)
+            ResponseStore.Insertion(
                 id="9bca1e45-310b-4677-bb86-255da5c7eb34",
                 data={
                     "survey_id": "144",
@@ -81,15 +73,15 @@ class SQLTests(unittest.TestCase):
         }
         try:
             con = pm.getconn()
-            CreateResponseTable().run(con)
+            ResponseStore.Creation().run(con)
 
             then = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
-            InsertResponse(
+            ResponseStore.Insertion(
                 id="9bca1e45-310b-4677-bb86-255da5c7eb34",
                 data=response
             ).run(con)
 
-            rv = SelectResponse(
+            rv = ResponseStore.Selection(
                 id="9bca1e45-310b-4677-bb86-255da5c7eb34"
             ).run(con)
             now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
@@ -114,16 +106,16 @@ class SQLTests(unittest.TestCase):
         }
         try:
             con = pm.getconn()
-            CreateResponseTable().run(con)
+            ResponseStore.Creation().run(con)
 
             then = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
-            InsertResponse(
+            ResponseStore.Insertion(
                 id="9bca1e45-310b-4677-bb86-255da5c7eb34",
                 valid=True,
                 data=response
             ).run(con)
 
-            rv = ListResponses(valid=True).run(con)
+            rv = ResponseStore.Filter(valid=True).run(con)
             now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
             self.assertIsInstance(rv, list)
             self.assertEqual(1, len(rv))
@@ -132,11 +124,12 @@ class SQLTests(unittest.TestCase):
             self.assertIsInstance(rv[0]["ts"], datetime.datetime)
             self.assertTrue(then < rv[0]["ts"] < now)
 
-            rv = ListResponses(valid=False).run(con)
+            rv = ResponseStore.Filter(valid=False).run(con)
             self.assertIsInstance(rv, list)
             self.assertEqual(0, len(rv))
         finally:
             pm.putconn(con)
+
 
 @testing.postgresql.skipIfNotInstalled
 class PoolManagerTests(unittest.TestCase):
