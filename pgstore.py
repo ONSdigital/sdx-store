@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import textwrap
 
@@ -21,7 +22,6 @@ class SQLOperation:
 
         """
         cur = con.cursor()
-        print(cur.mogrify(self.sql(), self.kwargs))
         cur.execute(self.sql(), self.kwargs)
         con.commit()
         return cur
@@ -54,12 +54,32 @@ class InsertResponse(SQLOperation):
 
     def __init__(self, **kwargs):
         kwargs["data"] = Json(kwargs.get("data", "{}"))
-        print(kwargs)
         super().__init__(**kwargs) 
 
     def run(self, con):
         cur = super().run(con)
         cur.close()
+
+
+class SelectResponse(SQLOperation):
+
+    @staticmethod
+    def sql(**kwargs):
+        return textwrap.dedent("""
+        SELECT id, ts, data FROM responses
+          WHERE id = %(id)s
+        """)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs) 
+
+    def run(self, con):
+        cur = super().run(con)
+        rv = OrderedDict(
+            (k, v) for k, v in zip(("id", "ts", "data"), cur.fetchone())
+        )
+        cur.close()
+        return rv
 
 
 class ProcessSafePoolManager:

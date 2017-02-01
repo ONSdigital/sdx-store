@@ -1,3 +1,5 @@
+from collections import OrderedDict
+import datetime
 import json
 import os
 import unittest
@@ -8,6 +10,7 @@ import testing.postgresql
 
 from pgstore import CreateResponseTable
 from pgstore import InsertResponse
+from pgstore import SelectResponse
 from pgstore import ProcessSafePoolManager
 
 """
@@ -61,6 +64,34 @@ class SQLTests(unittest.TestCase):
                     "data": {}
                 }
             ).run(con)
+
+        finally:
+            pm.putconn(con)
+
+    def test_select_response(self):
+        pm = ProcessSafePoolManager(**self.db.dsn())
+        response = {
+            "survey_id": "144",
+            "metadata": {
+                "user_id": "sdx",
+                "ru_ref": "12346789012A"
+            },
+            "data": {}
+        }
+        try:
+            con = pm.getconn()
+            CreateResponseTable().run(con)
+            InsertResponse(
+                id="9bca1e45-310b-4677-bb86-255da5c7eb34",
+                data=response
+            ).run(con)
+
+            rv = SelectResponse(
+                id="9bca1e45-310b-4677-bb86-255da5c7eb34"
+            ).run(con)
+            self.assertIsInstance(rv, OrderedDict)
+            self.assertEqual(response, rv["data"], rv)
+            self.assertIsInstance(rv["ts"], datetime.datetime)
 
         finally:
             pm.putconn(con)
