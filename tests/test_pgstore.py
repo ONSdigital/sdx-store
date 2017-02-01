@@ -11,6 +11,7 @@ import testing.postgresql
 from pgstore import CreateResponseTable
 from pgstore import InsertResponse
 from pgstore import SelectResponse
+from pgstore import ListResponses
 from pgstore import ProcessSafePoolManager
 
 """
@@ -48,7 +49,7 @@ class SQLTests(unittest.TestCase):
         finally:
             pm.putconn(con)
 
-    def test_response_insertion(self):
+    def test_insert_response(self):
         pm = ProcessSafePoolManager(**self.db.dsn())
         try:
             con = pm.getconn()
@@ -93,6 +94,7 @@ class SQLTests(unittest.TestCase):
             ).run(con)
             now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
             self.assertIsInstance(rv, OrderedDict)
+            self.assertIsNone(rv["valid"])
             self.assertEqual(response, rv["data"], rv)
             self.assertIsInstance(rv["ts"], datetime.datetime)
             self.assertTrue(then < rv["ts"] < now)
@@ -100,6 +102,41 @@ class SQLTests(unittest.TestCase):
         finally:
             pm.putconn(con)
 
+    def test_list_responses(self):
+        pm = ProcessSafePoolManager(**self.db.dsn())
+        response = {
+            "survey_id": "144",
+            "metadata": {
+                "user_id": "sdx",
+                "ru_ref": "12346789012A"
+            },
+            "data": {}
+        }
+        try:
+            con = pm.getconn()
+            CreateResponseTable().run(con)
+
+            then = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
+            InsertResponse(
+                id="9bca1e45-310b-4677-bb86-255da5c7eb34",
+                valid=True,
+                data=response
+            ).run(con)
+
+            rv = ListResponses(valid=True).run(con)
+            now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
+            self.assertIsInstance(rv, list)
+            self.assertEqual(1, len(rv))
+            self.assertIs(True, rv[0]["valid"])
+            self.assertEqual(response, rv[0]["data"])
+            self.assertIsInstance(rv[0]["ts"], datetime.datetime)
+            self.assertTrue(then < rv[0]["ts"] < now)
+
+            rv = ListResponses(valid=False).run(con)
+            self.assertIsInstance(rv, list)
+            self.assertEqual(0, len(rv))
+        finally:
+            pm.putconn(con)
 
 @testing.postgresql.skipIfNotInstalled
 class PoolManagerTests(unittest.TestCase):

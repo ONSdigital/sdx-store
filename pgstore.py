@@ -1,3 +1,4 @@
+from collections import defaultdict
 from collections import OrderedDict
 import os
 import textwrap
@@ -8,12 +9,14 @@ from psycopg2.pool import ThreadedConnectionPool
 
 class SQLOperation:
 
+    cols = ("id", "ts", "valid", "data")
+
     @staticmethod
     def sql():
         raise NotImplementedError
 
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
+        self.params = {c: kwargs.get(c) for c in self.cols}
 
     def run(self, con):
         """
@@ -22,7 +25,7 @@ class SQLOperation:
 
         """
         cur = con.cursor()
-        cur.execute(self.sql(), self.kwargs)
+        cur.execute(self.sql(), self.params)
         con.commit()
         return cur
 
@@ -35,6 +38,7 @@ class CreateResponseTable(SQLOperation):
         CREATE TABLE IF NOT EXISTS responses (
           id uuid PRIMARY KEY,
           ts timestamp WITH time zone DEFAULT NOW(),
+          valid boolean DEFAULT NULL,
           data jsonb
         )""")
 
@@ -48,8 +52,8 @@ class InsertResponse(SQLOperation):
     @staticmethod
     def sql(**kwargs):
         return textwrap.dedent("""
-        INSERT INTO responses (id, data)
-          VALUES (%(id)s, %(data)s)
+        INSERT INTO responses (id, valid, data)
+          VALUES (%(id)s, %(valid)s, %(data)s)
         """)
 
     def __init__(self, **kwargs):
@@ -66,18 +70,34 @@ class SelectResponse(SQLOperation):
     @staticmethod
     def sql(**kwargs):
         return textwrap.dedent("""
-        SELECT id, ts, data FROM responses
+        SELECT id, ts, valid, data FROM responses
           WHERE id = %(id)s
         """)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs) 
 
     def run(self, con):
         cur = super().run(con)
         rv = OrderedDict(
-            (k, v) for k, v in zip(("id", "ts", "data"), cur.fetchone())
+            (k, v) for k, v in zip(self.cols, cur.fetchone())
         )
+        cur.close()
+        return rv
+
+
+class ListResponses(SQLOperation):
+
+    @staticmethod
+    def sql(**kwargs):
+        return textwrap.dedent("""
+        SELECT id, ts, valid, data FROM responses
+          WHERE valid = %(valid)s
+        """)
+
+    def run(self, con):
+        cur = super().run(con)
+        rv = [
+            OrderedDict((k, v) for k, v in zip(self.cols, row))
+            for row in cur.fetchall()
+        ]
         cur.close()
         return rv
 
