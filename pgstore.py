@@ -6,6 +6,9 @@ from psycopg2.extras import Json
 from psycopg2.pool import ThreadedConnectionPool
 
 
+def get_dsn(settings=None):
+    return {}
+
 class ResponseStore:
 
     class SQLOperation:
@@ -18,7 +21,7 @@ class ResponseStore:
         def __init__(self, **kwargs):
             self.params = {c: kwargs.get(c) for c in self.cols}
 
-        def run(self, con):
+        def run(self, con, log=None):
             """
             Execute the SQL defined by this class.
             Returns the cursor for data extraction.
@@ -52,6 +55,7 @@ class ResponseStore:
             return textwrap.dedent("""
             INSERT INTO responses (id, valid, data)
               VALUES (%(id)s, %(valid)s, %(data)s)
+              RETURNING id
             """)
 
         def __init__(self, **kwargs):
@@ -60,7 +64,9 @@ class ResponseStore:
 
         def run(self, con):
             cur = super().run(con)
+            rv = cur.fetchone()
             cur.close()
+            return rv[0] if rv else None
 
     class Selection(SQLOperation):
 

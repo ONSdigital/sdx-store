@@ -1,17 +1,21 @@
-import unittest
-import server
-from tests.test_data import test_message, updated_message
-import mock
-import mongomock
 import json
 import logging
+import unittest
+
+import mock
 from structlog import wrap_logger
+
+import server
+import testing.postgresql
+
+from tests.test_data import test_message, updated_message
 
 
 class TestStoreService(unittest.TestCase):
     endpoint = "/responses"
     test_json = json.loads(test_message)
     updated_json = json.loads(updated_message)
+    factory = testing.postgresql.PostgresqlFactory(cache_initialized_db=True)
 
     def add_test_data(self, db):
         docs = [{'survey_response': self.test_json}, {'survey_response': self.updated_json}]
@@ -20,18 +24,20 @@ class TestStoreService(unittest.TestCase):
     def setUp(self):
         self.app = server.app.test_client()
         self.app.testing = True
+        self.db = testing.postgresql.Postgresql()
 
-    def test_save_response_adds_doc_and_returns_id(self):
-        mock_db = mongomock.MongoClient().db.collection
+    def tearDown(self):
+        self.db.stop()
+
+    def test_save_response_adds_json_and_returns_id(self):
         logger = wrap_logger(logging.getLogger("TEST"))
-        with mock.patch('server.get_db_responses', return_value=mock_db):
-            mongo_id, invalid_flag = server.save_response(logger, json.loads(test_message))
-            self.assertEqual(1, mock_db.count())
-            self.assertIsNotNone(mongo_id)
+        tx_id, invalid_flag = server.save_response(logger, json.loads(test_message))
+        self.assertEqual(1, mock_db.count())
+        self.assertIsNotNone(tx_id)
 
     def test_queue_fails_returns_500(self):
         mock_db = mongomock.MongoClient().db.collection
-        with mock.patch('server.get_db_responses', return_value=mock_db):
+        with mock.patch('pgstore.get_dsn', return_value=self.db.dsn()):
             with mock.patch('server.queue_cs_notification', return_value=False):
                 r = self.app.post(self.endpoint, data=test_message)
                 self.assertEqual(500, r.status_code)
@@ -43,7 +49,7 @@ class TestStoreService(unittest.TestCase):
                 r = self.app.post(self.endpoint, data=test_message)
                 self.assertEqual(200, r.status_code)
 
-    # /responses/<mongo_id> GET
+    # /responses/<tx_id> GET
     def test_get_invalid_id_returns_400(self):
         mock_db = mongomock.MongoClient().db.collection
         with mock.patch('server.get_db_responses', return_value=mock_db):

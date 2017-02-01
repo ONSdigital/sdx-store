@@ -46,8 +46,10 @@ class SQLTests(unittest.TestCase):
         try:
             con = pm.getconn()
             ResponseStore.Creation().run(con)
-            ResponseStore.Insertion(
-                id="9bca1e45-310b-4677-bb86-255da5c7eb34",
+            txId = "9bca1e45-310b-4677-bb86-255da5c7eb34"
+
+            rv = ResponseStore.Insertion(
+                id=txId,
                 data={
                     "survey_id": "144",
                     "metadata": {
@@ -57,6 +59,7 @@ class SQLTests(unittest.TestCase):
                     "data": {}
                 }
             ).run(con)
+            self.assertEqual(txId, rv)
 
         finally:
             pm.putconn(con)
@@ -108,12 +111,9 @@ class SQLTests(unittest.TestCase):
             con = pm.getconn()
             ResponseStore.Creation().run(con)
 
+            txId = "9bca1e45-310b-4677-bb86-255da5c7eb34"
             then = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
-            ResponseStore.Insertion(
-                id="9bca1e45-310b-4677-bb86-255da5c7eb34",
-                valid=True,
-                data=response
-            ).run(con)
+            rv = ResponseStore.Insertion(id=txId, valid=True, data=response).run(con)
 
             rv = ResponseStore.Filter(valid=True).run(con)
             now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)

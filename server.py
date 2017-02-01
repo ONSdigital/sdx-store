@@ -11,12 +11,17 @@ from structlog import wrap_logger
 from queue_publisher import QueuePublisher
 import os
 
-from mongostore import get_db_responses
-# from pgstore import ResponseStore
+# from mongostore import get_db_responses
+from pgstore import get_dsn
+from pgstore import ResponseStore
+from pgstore import ProcessSafePoolManager
 
 logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
+
 app = Flask(__name__)
+app.pm = ProcessSafePoolManager(**get_dsn(settings))
+
 app.config['MONGODB_URL'] = settings.MONGODB_URL
 
 schema = Schema({
@@ -79,37 +84,39 @@ def json_response(content):
 
 
 def save_response(bound_logger, survey_response):
-    doc = {}
-    doc['survey_response'] = survey_response
-    doc['added_date'] = datetime.utcnow()
 
-    invalid_flag = False
-
-    if 'invalid' in survey_response:
-        invalid_flag = survey_response['invalid']
-
-    responses = get_db_responses(app.config, bound_logger, invalid_flag)
-    if responses is None:
+    con = app.pm.getconn()
+    invalid = survey_response.get("invalid")
+    try:
+        id_ = ResponseStore.Insertion(
+            id=survey_response["tx_id"],
+            valid=not invalid,
+            data=survey_response
+        ).run(con, log=bound_logger)
+    except KeyError:
+        bound_logger.warning("Missing transaction id")
         return None, False
     else:
-        result = responses.insert_one(doc)
-        bound_logger.info("Response saved", inserted_id=result.inserted_id, invalid=invalid_flag)
-        return str(result.inserted_id), invalid_flag
+        bound_logger.info("Response saved", inserted_id=id_, invalid=invalid)
+        return id_, invalid
+    finally:
+        pm.putconn(con)
 
 
-def queue_cs_notification(logger, mongo_id):
+
+def queue_cs_notification(logger, tx_id):
     publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CS_QUEUE)
-    return publisher.publish_message(mongo_id)
+    return publisher.publish_message(tx_id)
 
 
-def queue_ctp_notification(logger, mongo_id):
+def queue_ctp_notification(logger, tx_id):
     publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CTP_QUEUE)
-    return publisher.publish_message(mongo_id)
+    return publisher.publish_message(tx_id)
 
 
-def queue_cora_notification(logger, mongo_id):
+def queue_cora_notification(logger, tx_id):
     publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CORA_QUEUE)
-    return publisher.publish_message(mongo_id)
+    return publisher.publish_message(tx_id)
 
 
 @app.route('/responses', methods=['POST'])
@@ -206,10 +213,10 @@ def do_get_responses():
     return fetch_responses(False)
 
 
-@app.route('/responses/<mongo_id>', methods=['GET'])
-def do_get_response(mongo_id):
+@app.route('/responses/<tx_id>', methods=['GET'])
+def do_get_response(tx_id):
     try:
-        result = get_db_responses().find_one({"_id": ObjectId(mongo_id)})
+        result = get_db_responses().find_one({"_id": ObjectId(tx_id)})
         if result:
             result['_id'] = str(result['_id'])
             return json_response(result)
@@ -225,20 +232,20 @@ def do_get_response(mongo_id):
 
 @app.route('/queue', methods=['POST'])
 def do_queue():
-    mongo_id = request.get_json(force=True)['id']
+    tx_id = request.get_json(force=True)['id']
     # check document exists with id
-    result = do_get_response(mongo_id)
+    result = do_get_response(tx_id)
     if result.status_code != 200:
         return result
 
     response = json.loads(result.response[0].decode('utf-8'))
 
     if response['survey_response']['survey_id'] == 'census':
-        queued = queue_ctp_notification(logger, mongo_id)
+        queued = queue_ctp_notification(logger, tx_id)
     elif response['survey_response']['survey_id'] == '144':
-        queued = queue_cora_notification(logger, mongo_id)
+        queued = queue_cora_notification(logger, tx_id)
     else:
-        queued = queue_cs_notification(logger, mongo_id)
+        queued = queue_cs_notification(logger, tx_id)
 
     if queued is False:
         return server_error("Unable to queue notification")
@@ -254,4 +261,9 @@ def healthcheck():
 if __name__ == '__main__':
     # Startup
     port = int(os.getenv("PORT"))
+
+    con = pm.getconn()
+    ResponseStore.Creation().run(con)
+    pm.putconn(con)
+
     app.run(debug=True, host='0.0.0.0', port=port)
