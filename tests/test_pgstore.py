@@ -81,6 +81,8 @@ class SQLTests(unittest.TestCase):
         try:
             con = pm.getconn()
             CreateResponseTable().run(con)
+
+            then = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
             InsertResponse(
                 id="9bca1e45-310b-4677-bb86-255da5c7eb34",
                 data=response
@@ -89,9 +91,11 @@ class SQLTests(unittest.TestCase):
             rv = SelectResponse(
                 id="9bca1e45-310b-4677-bb86-255da5c7eb34"
             ).run(con)
+            now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
             self.assertIsInstance(rv, OrderedDict)
             self.assertEqual(response, rv["data"], rv)
             self.assertIsInstance(rv["ts"], datetime.datetime)
+            self.assertTrue(then < rv["ts"] < now)
 
         finally:
             pm.putconn(con)
