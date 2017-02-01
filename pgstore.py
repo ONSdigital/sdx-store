@@ -34,7 +34,7 @@ class CreateResponseTable(SQLOperation):
         return textwrap.dedent("""
         CREATE TABLE IF NOT EXISTS responses (
           id uuid PRIMARY KEY,
-          ts timestamp WITH time zone,
+          ts timestamp WITH time zone DEFAULT NOW(),
           data jsonb
         )""")
 
