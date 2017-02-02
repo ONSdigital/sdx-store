@@ -154,73 +154,45 @@ def do_save_response():
     return jsonify(result="ok")
 
 
-def fetch_responses(invalid=False):
+def fetch_responses(tx_id=None, invalid=False):
+    con = pm.getconn()
     try:
-        schema(request.args)
-    except MultipleInvalid as e:
-        logger.error("Request args failed schema validation", error=str(e))
-        return client_error(repr(e))
-
-    if invalid:
-        invalid = True
-
-    survey_id = request.args.get('survey_id')
-    form = request.args.get('form')
-    ru_ref = request.args.get('ru_ref')
-    period = request.args.get('period')
-    added_ms = request.args.get('added_ms')
-    page = request.args.get('page')
-    per_page = request.args.get('per_page')
-
-    # paging defaults
-    if not page:
-        page = 1
-    else:
-        page = int(page)
-    if not per_page:
-        per_page = 100
-    else:
-        per_page = int(per_page)
-
-    search_criteria = {}
-    if survey_id:
-        search_criteria['survey_response.survey_id'] = survey_id
-    if form:
-        search_criteria['survey_response.form'] = form
-    if ru_ref:
-        search_criteria['survey_response.metadata.ru_ref'] = ru_ref
-    if period:
-        search_criteria['survey_response.collection.period'] = period
-    if added_ms:
-        search_criteria['added_date'] = {
-            "$gte": datetime.fromtimestamp(int(added_ms) / 1000.0)
-        }
-
-    results = {}
-    responses = []
-    db_responses = get_db_responses(invalid_flag=invalid)
-    count = db_responses.find(search_criteria).count()
-    results['total_hits'] = count
-    cursor = db_responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
-    for document in cursor:
-        document['_id'] = str(document['_id'])
-        if added_ms:
-            document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
-        responses.append(document)
-
-    results['results'] = responses
-    return json_response(results)
+        if tx_id is None:
+            result = []
+            if invalid in (False, None):
+                result += ResponseStore.Filter(valid=True).run(con, logger)
+            if invalid in (True, None):
+                result += ResponseStore.Filter(valid=False).run(con, logger)
+        else:
+            result = ResponseStore.Selection(id=tx_id).run(con, logger)
+        return result
+    finally:
+        pm.putconn(con)
 
 
 @app.route('/invalid-responses', methods=['GET'])
 def do_get_invalid_responses():
-    return fetch_responses(True)
+    try:
+        result = fetch_responses(invalid=True)
+    except Exception as e:
+        return server_error(repr(e))
 
+    if result:
+        return json_response(result["data"])
+    else:
+        return jsonify({}), 404
 
 @app.route('/responses', methods=['GET'])
 def do_get_responses():
-    return fetch_responses(False)
+    try:
+        result = fetch_responses()
+    except Exception as e:
+        return server_error(repr(e))
 
+    if result:
+        return json_response(result["data"])
+    else:
+        return jsonify({}), 404
 
 @app.route('/responses/<tx_id>', methods=['GET'])
 def do_get_response(tx_id):
@@ -228,19 +200,14 @@ def do_get_response(tx_id):
         return client_error("Invalid transaction_id: {0}".format(tx_id))
 
     try:
-        con = pm.getconn()
-        result = ResponseStore.Selection(id=tx_id).run(con, logger)
-        if result:
-            return json_response(result["data"])
-        else:
-            return jsonify({}), 404
-
+        result = fetch_responses(tx_id=tx_id)
     except Exception as e:
         return server_error(repr(e))
 
-    finally:
-        pm.putconn(con)
-
+    if result:
+        return json_response(result["data"])
+    else:
+        return jsonify({}), 404
 
 @app.route('/queue', methods=['POST'])
 def do_queue():
@@ -252,9 +219,9 @@ def do_queue():
 
     response = json.loads(result.response[0].decode('utf-8'))
 
-    if response['survey_response']['survey_id'] == 'census':
+    if response["data"]['survey_id'] == 'census':
         queued = queue_ctp_notification(logger, tx_id)
-    elif response['survey_response']['survey_id'] == '144':
+    elif response["data"]['survey_id'] == '144':
         queued = queue_cora_notification(logger, tx_id)
     else:
         queued = queue_cs_notification(logger, tx_id)

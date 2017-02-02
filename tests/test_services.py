@@ -22,9 +22,13 @@ class TestStoreService(unittest.TestCase):
     test_json = json.loads(test_message)
     updated_json = json.loads(updated_message)
 
-    def add_test_data(self, db):
-        docs = [{'survey_response': self.test_json}, {'survey_response': self.updated_json}]
-        db.insert_many(docs)
+    def add_test_data(self):
+        con = self.pm.getconn()
+        try:
+            for data in [json.loads(i) for i in (self.test_json, self.updated_json)]:
+                ResponseStore.Insertion(id=data["tx_id"], data=data).run(con)
+        finally:
+            self.pm.putconn(con)
 
     @classmethod
     def setUpClass(cls):
@@ -67,53 +71,14 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(404, r.status_code)
 
     def test_get_valid_id_returns_id_and_200(self):
-        mock_db = mongomock.MongoClient().db.collection
-        doc = {'survey_response': test_message}
-        result = mock_db.insert_one(doc)
-        expected_id = str(result.inserted_id)
+        data = json.loads(test_message)
 
-        with mock.patch('server.get_db_responses', return_value=mock_db):
-            r = self.app.get(self.endpoint + '/' + expected_id)
-            self.assertIsNotNone(r.data)
-            self.assertEqual(200, r.status_code)
+        try:
+            con = self.pm.getconn()
+            pgstore.ResponseStore.Insertion(id=data["tx_id"], data=data).run(con)
+        finally:
+            self.pm.putconn(con)
 
-    def test_get_responses_incorrect_value(self):
-        mock_db = mongomock.MongoClient().db.collection
-        with mock.patch('server.get_db_responses', return_value=mock_db):
-            r = self.app.get(self.endpoint + '?survey_id=123456')
-            total_count = json.loads(r.data.decode('utf8'))['total_hits']
-            self.assertEqual(0, total_count)
-
-    def test_get_responses_per_page(self):
-        mock_db = mongomock.MongoClient().db.collection
-        self.add_test_data(mock_db)
-        with mock.patch('server.get_db_responses', return_value=mock_db):
-            r = self.app.get(self.endpoint + '?per_page=1')
-            page_count = len(json.loads(r.data.decode('utf8'))['results'])
-            total_count = json.loads(r.data.decode('utf8'))['total_hits']
-            self.assertEqual(page_count, 1)
-            self.assertGreaterEqual(total_count, page_count)
-
-    def test_get_responses_survey_id(self):
-        mock_db = mongomock.MongoClient().db.collection
-        self.add_test_data(mock_db)
-        with mock.patch('server.get_db_responses', return_value=mock_db):
-            r = self.app.get(self.endpoint + '?survey_id=' + self.test_json['survey_id'])
-            total_count = json.loads(r.data.decode('utf8'))['total_hits']
-            self.assertEqual(total_count, 1)
-
-    def test_get_responses_period(self):
-        mock_db = mongomock.MongoClient().db.collection
-        self.add_test_data(mock_db)
-        with mock.patch('server.get_db_responses', return_value=mock_db):
-            r = self.app.get(self.endpoint + '?period=' + self.test_json['collection']['period'])
-            total_count = json.loads(r.data.decode('utf8'))['total_hits']
-            self.assertEqual(total_count, 1)
-
-    def test_get_responses_ru_ref(self):
-        mock_db = mongomock.MongoClient().db.collection
-        self.add_test_data(mock_db)
-        with mock.patch('server.get_db_responses', return_value=mock_db):
-            r = self.app.get(self.endpoint + '?ru_ref=' + self.test_json['metadata']['ru_ref'])
-            total_count = json.loads(r.data.decode('utf8'))['total_hits']
-            self.assertEqual(total_count, 1)
+        r = self.app.get(self.endpoint + '/' + data["tx_id"])
+        self.assertIsNotNone(r.data)
+        self.assertEqual(200, r.status_code)
