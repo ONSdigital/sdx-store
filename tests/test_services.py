@@ -13,11 +13,6 @@ from tests.test_data import test_message, updated_message
 
 
 class TestStoreService(unittest.TestCase):
-    """
-    Testing Flask apps requires understanding how contexts are managed:
-    http://kronosapiens.github.io/blog/2014/08/14/understanding-contexts-in-flask.html
-
-    """
     endpoint = "/responses"
     test_json = json.loads(test_message)
     updated_json = json.loads(updated_message)

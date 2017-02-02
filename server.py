@@ -186,13 +186,13 @@ def do_get_invalid_responses():
 def do_get_responses():
     try:
         result = fetch_responses()
-    except IndexError as e:
+    except Exception as e:
         return server_error(repr(e))
 
     if result:
         return json_response(result["data"])
     else:
-        return jsonify({}), 404
+        return jsonify({}), 400
 
 @app.route('/responses/<tx_id>', methods=['GET'])
 def do_get_response(tx_id):
