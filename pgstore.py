@@ -9,13 +9,14 @@ from psycopg2.pool import ThreadedConnectionPool
 
 
 def get_dsn(settings=None):
-    return {
+    rv = {
         k: getattr(settings, v)
         for k, v in (
             ("host", "DB_HOST"), ("port", "DB_PORT"),
             ("dbname", "DB_NAME"), ("user", "DB_USER"), ("password", "DB_PASSWORD")
         )
     }
+    return rv
 
 
 class ResponseStore:
