@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import os
+import re
 import textwrap
 
 from psycopg2.extras import Json
@@ -10,6 +11,8 @@ def get_dsn(settings=None):
     return {}
 
 class ResponseStore:
+
+    idPattern = re.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
     class SQLOperation:
         cols = ("id", "ts", "valid", "data")
@@ -79,11 +82,18 @@ class ResponseStore:
 
         def run(self, con, log=None):
             cur = super().run(con)
-            rv = OrderedDict(
-                (k, v) for k, v in zip(self.cols, cur.fetchone())
-            )
-            cur.close()
-            return rv
+            rv = {}
+            try:
+                row = cur.fetchone()
+            except psycopg2.ProgrammingError:
+                pass  # Default return value
+            else:
+                rv = OrderedDict(
+                    (k, v) for k, v in zip(self.cols, row)
+                )
+            finally:
+                cur.close()
+                return rv
 
     class Filter(SQLOperation):
 

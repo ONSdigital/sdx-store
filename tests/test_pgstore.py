@@ -2,6 +2,7 @@ from collections import OrderedDict
 import datetime
 import os
 import unittest
+import uuid
 
 import psycopg2.extensions
 import psycopg2.pool
@@ -10,6 +11,18 @@ import testing.postgresql
 from pgstore import ResponseStore
 from pgstore import ProcessSafePoolManager
 
+
+class ValidationTests(unittest.TestCase):
+
+    def test_valid(self):
+        val = str(uuid.uuid4())
+        self.assertTrue(ResponseStore.idPattern.match(val), val)
+        self.assertTrue(ResponseStore.idPattern.match(val + "\n"))
+
+    def test_invalid(self):
+        self.assertFalse(ResponseStore.idPattern.match(""))
+        self.assertFalse(ResponseStore.idPattern.match(str(uuid.uuid4())[:-1]))
+        self.assertFalse(ResponseStore.idPattern.match(str(uuid.uuid4()) + "0"))
 
 @testing.postgresql.skipIfNotInstalled
 class SQLTests(unittest.TestCase):
@@ -64,6 +77,20 @@ class SQLTests(unittest.TestCase):
         finally:
             pm.putconn(con)
 
+    def test_select_response_miss(self):
+        pm = ProcessSafePoolManager(**self.db.dsn())
+        try:
+            con = pm.getconn()
+            ResponseStore.Creation().run(con)
+
+            rv = ResponseStore.Selection(
+                id="9bca1e45-310b-4677-bb86-255da5c7eb34"
+            ).run(con)
+            self.assertIsInstance(rv, dict)
+            self.assertFalse(rv)
+        finally:
+            pm.putconn(con)
+
     def test_select_response(self):
         pm = ProcessSafePoolManager(**self.db.dsn())
         response = {
@@ -94,6 +121,22 @@ class SQLTests(unittest.TestCase):
             self.assertIsInstance(rv["ts"], datetime.datetime)
             self.assertTrue(then < rv["ts"] < now)
 
+        finally:
+            pm.putconn(con)
+
+    def test_list_responses_miss(self):
+        pm = ProcessSafePoolManager(**self.db.dsn())
+        try:
+            con = pm.getconn()
+            ResponseStore.Creation().run(con)
+
+            txId = "9bca1e45-310b-4677-bb86-255da5c7eb34"
+            rv = ResponseStore.Filter(valid=True).run(con)
+            self.assertIsInstance(rv, list)
+            self.assertEqual(0, len(rv))
+            rv = ResponseStore.Filter(valid=False).run(con)
+            self.assertIsInstance(rv, list)
+            self.assertEqual(0, len(rv))
         finally:
             pm.putconn(con)
 

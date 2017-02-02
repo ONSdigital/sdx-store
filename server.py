@@ -11,7 +11,6 @@ from structlog import wrap_logger
 from queue_publisher import QueuePublisher
 import os
 
-# from mongostore import get_db_responses
 from pgstore import get_dsn
 from pgstore import ResponseStore
 from pgstore import ProcessSafePoolManager
@@ -27,7 +26,12 @@ def create_tables():
     ResponseStore.Creation().run(con)
     pm.putconn(con)
 
-app.config['MONGODB_URL'] = settings.MONGODB_URL
+def get_db_responses(logger=None, invalid_flag=False):
+    try:
+        con = pm.getconn()
+        return ResponseStore.Filter(valid=not invalid_flag).run(con, logger)
+    finally:
+        pm.putconn(con)
 
 schema = Schema({
     'survey_id': str,
@@ -220,19 +224,22 @@ def do_get_responses():
 
 @app.route('/responses/<tx_id>', methods=['GET'])
 def do_get_response(tx_id):
-    try:
-        result = get_db_responses().find_one({"_id": ObjectId(tx_id)})
-        if result:
-            result['_id'] = str(result['_id'])
-            return json_response(result)
+    if not (tx_id and ResponseStore.idPattern.match(tx_id)):
+        return client_error("Invalid transaction_id: {0}".format(tx_id))
 
-    except InvalidId as e:
-        return client_error(repr(e))
+    try:
+        con = pm.getconn()
+        result = ResponseStore.Selection(id=tx_id).run(con, logger)
+        if result:
+            return json_response(result["data"])
+        else:
+            return jsonify({}), 404
 
     except Exception as e:
         return server_error(repr(e))
 
-    return jsonify({}), 404
+    finally:
+        pm.putconn(con)
 
 
 @app.route('/queue', methods=['POST'])
