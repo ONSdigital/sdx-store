@@ -44,7 +44,7 @@ class ResponseStore:
               data jsonb
             )""")
 
-        def run(self, con):
+        def run(self, con, log=None):
             cur = super().run(con)
             cur.close()
 
@@ -62,7 +62,7 @@ class ResponseStore:
             kwargs["data"] = Json(kwargs.get("data", "{}"))
             super().__init__(**kwargs)
 
-        def run(self, con):
+        def run(self, con, log=None):
             cur = super().run(con)
             rv = cur.fetchone()
             cur.close()
@@ -77,7 +77,7 @@ class ResponseStore:
               WHERE id = %(id)s
             """)
 
-        def run(self, con):
+        def run(self, con, log=None):
             cur = super().run(con)
             rv = OrderedDict(
                 (k, v) for k, v in zip(self.cols, cur.fetchone())
@@ -94,7 +94,7 @@ class ResponseStore:
               WHERE valid = %(valid)s
             """)
 
-        def run(self, con):
+        def run(self, con, log=None):
             cur = super().run(con)
             rv = [
                 OrderedDict((k, v) for k, v in zip(self.cols, row))
@@ -126,7 +126,7 @@ class ProcessSafePoolManager:
 
     def getconn(self):
         pidNow = os.getpid()
-        if self._pool is None or pidNow != self.pidLastSeen:
+        if self._pool is None or self._pool.closed or pidNow != self.pidLastSeen:
             minconn = self.kwargs.pop("minconn", 1)
             maxconn = self.kwargs.pop("maxconn", 16)
             self._pool = self.pool(minconn, maxconn, **self.kwargs)
@@ -135,3 +135,6 @@ class ProcessSafePoolManager:
 
     def putconn(self, conn):
         return self._pool.putconn(conn)
+
+    def closeall(self):
+        return self._pool.closeall()

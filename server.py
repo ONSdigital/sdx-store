@@ -20,7 +20,12 @@ logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT
 logger = wrap_logger(logging.getLogger(__name__))
 
 app = Flask(__name__)
-app.pm = ProcessSafePoolManager(**get_dsn(settings))
+pm = ProcessSafePoolManager(**get_dsn(settings))
+
+def create_tables():
+    con = pm.getconn()
+    ResponseStore.Creation().run(con)
+    pm.putconn(con)
 
 app.config['MONGODB_URL'] = settings.MONGODB_URL
 
@@ -85,7 +90,7 @@ def json_response(content):
 
 def save_response(bound_logger, survey_response):
 
-    con = app.pm.getconn()
+    con = pm.getconn()
     invalid = survey_response.get("invalid")
     try:
         id_ = ResponseStore.Insertion(
@@ -261,9 +266,5 @@ def healthcheck():
 if __name__ == '__main__':
     # Startup
     port = int(os.getenv("PORT"))
-
-    con = pm.getconn()
-    ResponseStore.Creation().run(con)
-    pm.putconn(con)
-
+    create_tables()
     app.run(debug=True, host='0.0.0.0', port=port)

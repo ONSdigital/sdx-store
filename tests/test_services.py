@@ -5,6 +5,7 @@ import unittest
 import mock
 from structlog import wrap_logger
 
+import pgstore
 import server
 import testing.postgresql
 
@@ -12,28 +13,39 @@ from tests.test_data import test_message, updated_message
 
 
 class TestStoreService(unittest.TestCase):
+    """
+    Testing Flask apps requires understanding how contexts are managed:
+    http://kronosapiens.github.io/blog/2014/08/14/understanding-contexts-in-flask.html
+
+    """
     endpoint = "/responses"
     test_json = json.loads(test_message)
     updated_json = json.loads(updated_message)
-    factory = testing.postgresql.PostgresqlFactory(cache_initialized_db=True)
 
     def add_test_data(self, db):
         docs = [{'survey_response': self.test_json}, {'survey_response': self.updated_json}]
         db.insert_many(docs)
 
+    @classmethod
+    def setUpClass(cls):
+        cls.pm = server.pm
+
     def setUp(self):
+        self.db = testing.postgresql.Postgresql()
+        self.pm.kwargs = self.db.dsn()
+        server.create_tables()
         self.app = server.app.test_client()
         self.app.testing = True
-        self.db = testing.postgresql.Postgresql()
 
     def tearDown(self):
+        self.pm.closeall()
         self.db.stop()
 
     def test_save_response_adds_json_and_returns_id(self):
         logger = wrap_logger(logging.getLogger("TEST"))
-        tx_id, invalid_flag = server.save_response(logger, json.loads(test_message))
-        self.assertEqual(1, mock_db.count())
-        self.assertIsNotNone(tx_id)
+        data = json.loads(test_message)
+        tx_id, invalid_flag = server.save_response(logger, data)
+        self.assertEqual(data["tx_id"], tx_id)
 
     def test_queue_fails_returns_500(self):
         mock_db = mongomock.MongoClient().db.collection
