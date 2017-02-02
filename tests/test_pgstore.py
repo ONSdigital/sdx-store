@@ -24,6 +24,7 @@ class ValidationTests(unittest.TestCase):
         self.assertFalse(ResponseStore.idPattern.match(str(uuid.uuid4())[:-1]))
         self.assertFalse(ResponseStore.idPattern.match(str(uuid.uuid4()) + "0"))
 
+
 @testing.postgresql.skipIfNotInstalled
 class SQLTests(unittest.TestCase):
     factory = testing.postgresql.PostgresqlFactory(cache_initialized_db=True)
@@ -130,7 +131,6 @@ class SQLTests(unittest.TestCase):
             con = pm.getconn()
             ResponseStore.Creation().run(con)
 
-            txId = "9bca1e45-310b-4677-bb86-255da5c7eb34"
             rv = ResponseStore.Filter(valid=True).run(con)
             self.assertIsInstance(rv, list)
             self.assertEqual(0, len(rv))

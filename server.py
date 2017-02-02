@@ -4,9 +4,7 @@ import logging.handlers
 from flask import Flask, request, jsonify, Response
 import json
 from datetime import datetime
-from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
-from bson.objectid import ObjectId
-from bson.errors import InvalidId
+from voluptuous import Schema, Coerce, All, Range
 from structlog import wrap_logger
 from queue_publisher import QueuePublisher
 import os
@@ -21,10 +19,12 @@ logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
 pm = ProcessSafePoolManager(**get_dsn(settings))
 
+
 def create_tables():
     con = pm.getconn()
     ResponseStore.Creation().run(con)
     pm.putconn(con)
+
 
 def get_db_responses(logger=None, invalid_flag=False):
     try:
@@ -112,7 +112,6 @@ def save_response(bound_logger, survey_response):
         pm.putconn(con)
 
 
-
 def queue_cs_notification(logger, tx_id):
     publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CS_QUEUE)
     return publisher.publish_message(tx_id)
@@ -182,6 +181,7 @@ def do_get_invalid_responses():
     else:
         return jsonify({}), 404
 
+
 @app.route('/responses', methods=['GET'])
 def do_get_responses():
     try:
@@ -193,6 +193,7 @@ def do_get_responses():
         return json_response(result["data"])
     else:
         return jsonify({}), 400
+
 
 @app.route('/responses/<tx_id>', methods=['GET'])
 def do_get_response(tx_id):
@@ -208,6 +209,7 @@ def do_get_response(tx_id):
         return json_response(result["data"])
     else:
         return jsonify({}), 404
+
 
 @app.route('/queue', methods=['POST'])
 def do_queue():

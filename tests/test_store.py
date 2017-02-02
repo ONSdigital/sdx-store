@@ -1,25 +1,17 @@
 import json
 import unittest
 
-import pgstore
 import server
 from tests.test_data import test_message, updated_message
 
 import mock
 import testing.postgresql
 
+
 class TestStoreService(unittest.TestCase):
     endpoint = "/responses"
     test_json = json.loads(test_message)
     updated_json = json.loads(updated_message)
-
-    def add_test_data(self):
-        con = self.pm.getconn()
-        try:
-            for data in [json.loads(i) for i in (self.test_json, self.updated_json)]:
-                ResponseStore.Insertion(id=data["tx_id"], data=data).run(con)
-        finally:
-            self.pm.putconn(con)
 
     @classmethod
     def setUpClass(cls):

@@ -3,12 +3,20 @@ import os
 import re
 import textwrap
 
+import psycopg2
 from psycopg2.extras import Json
 from psycopg2.pool import ThreadedConnectionPool
 
 
 def get_dsn(settings=None):
-    return {}
+    return {
+        k: getattr(settings, v)
+        for k, v in (
+            ("host", "DB_HOST"), ("port", "DB_PORT"),
+            ("dbname", "DB_NAME"), ("user", "DB_USER"), ("password", "DB_PASSWORD")
+        )
+    }
+
 
 class ResponseStore:
 
