@@ -186,7 +186,7 @@ def do_get_invalid_responses():
 def do_get_responses():
     try:
         result = fetch_responses()
-    except Exception as e:
+    except IndexError as e:
         return server_error(repr(e))
 
     if result:
