@@ -40,8 +40,12 @@ class ResponseStore:
 
             """
             cur = con.cursor()
-            cur.execute(self.sql(), self.params)
-            con.commit()
+            try:
+                cur.execute(self.sql(), self.params)
+            except psycopg2.ProgrammingError:
+                con.rollback()
+            else:
+                con.commit()
             return cur
 
     class Creation(SQLOperation):
@@ -75,10 +79,15 @@ class ResponseStore:
             super().__init__(**kwargs)
 
         def run(self, con, log=None):
-            cur = super().run(con)
-            rv = cur.fetchone()
-            cur.close()
-            return rv[0] if rv else None
+            try:
+                cur = super().run(con)
+            except psycopg2.IntegrityError:
+                con.rollback()
+                return None
+            else:
+                rv = cur.fetchone()
+                cur.close()
+                return rv[0] if rv else None
 
     class Selection(SQLOperation):
 

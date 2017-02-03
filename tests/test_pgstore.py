@@ -78,6 +78,29 @@ class SQLTests(unittest.TestCase):
         finally:
             pm.putconn(con)
 
+    def test_insert_response_duplicate(self):
+        pm = ProcessSafePoolManager(**self.db.dsn())
+        try:
+            con = pm.getconn()
+            ResponseStore.Creation().run(con)
+            txId = "9bca1e45-310b-4677-bb86-255da5c7eb34"
+            data = {
+                "survey_id": "144",
+                "metadata": {
+                    "user_id": "sdx",
+                    "ru_ref": "12346789012A"
+                },
+                "data": {}
+            }
+
+            rv = ResponseStore.Insertion(id=txId, data=data).run(con)
+            self.assertEqual(txId, rv)
+            rv = ResponseStore.Insertion(id=txId, data=data).run(con)
+            self.assertIsNone(rv)
+
+        finally:
+            pm.putconn(con)
+
     def test_select_response_miss(self):
         pm = ProcessSafePoolManager(**self.db.dsn())
         try:
