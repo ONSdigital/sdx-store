@@ -4,7 +4,6 @@ import logging
 LOGGING_FORMAT = "%(asctime)s|%(levelname)s: sdx-store: %(message)s"
 LOGGING_LEVEL = logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 RABBIT_CS_QUEUE = os.getenv('RABBIT_CS_QUEUE', 'sdx-cs-survey-notifications')
 RABBIT_CTP_QUEUE = os.getenv('RABBIT_CTP_QUEUE', 'sdx-ctp-survey-notifications')
 RABBIT_CORA_QUEUE = os.getenv('RABBIT_CORA_QUEUE', 'sdx-cora-survey-notifications')
