@@ -6,3 +6,7 @@ install:
     - make
 script:
     - make test
+services:
+    - postgresql
+addons:
+  postgresql: "9.2"
