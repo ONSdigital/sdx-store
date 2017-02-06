@@ -5,6 +5,8 @@ python:
 install:
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt
+before_script:
+    - psql -c 'create database test;' -U postgres
 script:
     - flake8
     - python -m unittest tests/*.py
