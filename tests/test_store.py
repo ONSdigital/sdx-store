@@ -4,6 +4,8 @@ from tests.test_data import test_message, updated_message
 import mock
 import mongomock
 import json
+import logging
+from structlog import wrap_logger
 
 
 class TestStoreService(unittest.TestCase):
@@ -26,8 +28,9 @@ class TestStoreService(unittest.TestCase):
 
     def test_save_response_adds_doc_and_returns_id(self):
         mock_db = mongomock.MongoClient().db.collection
+        logger = wrap_logger(logging.getLogger("TEST"))
         with mock.patch('server.get_db_responses', return_value=mock_db):
-            mongo_id, invalid_flag = server.save_response(None, json.loads(test_message))
+            mongo_id, invalid_flag = server.save_response(logger, json.loads(test_message))
             self.assertEqual(1, mock_db.count())
             self.assertIsNotNone(mongo_id)
 
@@ -39,14 +42,14 @@ class TestStoreService(unittest.TestCase):
     def test_queue_fails_returns_500(self):
         mock_db = mongomock.MongoClient().db.collection
         with mock.patch('server.get_db_responses', return_value=mock_db):
-            with mock.patch('server.queue_rrm_notification', return_value=False):
+            with mock.patch('server.queue_cs_notification', return_value=False):
                 r = self.app.post(self.endpoint, data=test_message)
                 self.assertEqual(500, r.status_code)
 
     def test_queue_succeeds_returns_200(self):
         mock_db = mongomock.MongoClient().db.collection
         with mock.patch('server.get_db_responses', return_value=mock_db):
-            with mock.patch('server.queue_rrm_notification', return_value=True):
+            with mock.patch('server.queue_cs_notification', return_value=True):
                 r = self.app.post(self.endpoint, data=test_message)
                 self.assertEqual(200, r.status_code)
 

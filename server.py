@@ -13,6 +13,7 @@ from structlog import wrap_logger
 from queue_publisher import QueuePublisher
 import os
 
+logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
 app.config['MONGODB_URL'] = settings.MONGODB_URL
@@ -96,6 +97,7 @@ def save_response(bound_logger, survey_response):
 
     try:
         result = get_db_responses(invalid_flag).insert_one(doc)
+        bound_logger.info("Response saved", inserted_id=result.inserted_id, invalid=invalid_flag)
         return str(result.inserted_id), invalid_flag
 
     except pymongo.errors.OperationFailure as e:
@@ -103,8 +105,8 @@ def save_response(bound_logger, survey_response):
         return None, False
 
 
-def queue_rrm_notification(logger, mongo_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_QUEUE)
+def queue_cs_notification(logger, mongo_id):
+    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CS_QUEUE)
     return publisher.publish_message(mongo_id)
 
 
@@ -113,24 +115,30 @@ def queue_ctp_notification(logger, mongo_id):
     return publisher.publish_message(mongo_id)
 
 
+def queue_cora_notification(logger, mongo_id):
+    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CORA_QUEUE)
+    return publisher.publish_message(mongo_id)
+
+
 @app.route('/responses', methods=['POST'])
 def do_save_response():
     survey_response = request.get_json(force=True)
     metadata = survey_response['metadata']
-    bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'])
+    bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'], tx_id=survey_response['tx_id'])
 
     inserted_id, invalid_flag = save_response(bound_logger, survey_response)
     if inserted_id is None:
         return server_error("Unable to save response")
 
     if invalid_flag is True:
-        bound_logger.info("Invalid response saved, no notification queued", inserted_id=inserted_id)
         return jsonify(result="false")
 
     if survey_response['survey_id'] == 'census':
         queued = queue_ctp_notification(bound_logger, inserted_id)
+    elif survey_response['survey_id'] == '144':
+        queued = queue_cora_notification(bound_logger, inserted_id)
     else:
-        queued = queue_rrm_notification(bound_logger, inserted_id)
+        queued = queue_cs_notification(bound_logger, inserted_id)
 
     if queued is False:
         return server_error("Unable to queue notification")
@@ -138,13 +146,15 @@ def do_save_response():
     return jsonify(result="ok")
 
 
-@app.route('/responses', methods=['GET'])
-def do_get_responses():
+def fetch_responses(invalid=False):
     try:
         schema(request.args)
     except MultipleInvalid as e:
         logger.error("Request args failed schema validation", error=str(e))
         return client_error(repr(e))
+
+    if invalid:
+        invalid = True
 
     survey_id = request.args.get('survey_id')
     form = request.args.get('form')
@@ -180,7 +190,7 @@ def do_get_responses():
 
     results = {}
     responses = []
-    db_responses = get_db_responses()
+    db_responses = get_db_responses(invalid_flag=invalid)
     count = db_responses.find(search_criteria).count()
     results['total_hits'] = count
     cursor = db_responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
@@ -192,6 +202,16 @@ def do_get_responses():
 
     results['results'] = responses
     return json_response(results)
+
+
+@app.route('/invalid-responses', methods=['GET'])
+def do_get_invalid_responses():
+    return fetch_responses(True)
+
+
+@app.route('/responses', methods=['GET'])
+def do_get_responses():
+    return fetch_responses(False)
 
 
 @app.route('/responses/<mongo_id>', methods=['GET'])
@@ -223,8 +243,10 @@ def do_queue():
 
     if response['survey_response']['survey_id'] == 'census':
         queued = queue_ctp_notification(logger, mongo_id)
+    elif response['survey_response']['survey_id'] == '144':
+        queued = queue_cora_notification(logger, mongo_id)
     else:
-        queued = queue_rrm_notification(logger, mongo_id)
+        queued = queue_cs_notification(logger, mongo_id)
 
     if queued is False:
         return server_error("Unable to queue notification")
@@ -239,8 +261,5 @@ def healthcheck():
 
 if __name__ == '__main__':
     # Startup
-    logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
-    logger.debug("START")
-
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
