@@ -263,6 +263,6 @@ def healthcheck():
 
 if __name__ == '__main__':
     # Startup
-    logger.info("Current version: {}".format(__version__))
+    logger.info("Starting server", version=__version__)
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
