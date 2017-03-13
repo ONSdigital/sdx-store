@@ -13,6 +13,8 @@ from structlog import wrap_logger
 from queue_publisher import QueuePublisher
 import os
 
+__version__ = "1.4.0"
+
 logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
@@ -261,5 +263,6 @@ def healthcheck():
 
 if __name__ == '__main__':
     # Startup
+    logger.info("Current version: {}".format(__version__))
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
