@@ -13,7 +13,7 @@ from structlog import wrap_logger
 from queue_publisher import QueuePublisher
 import os
 
-__version__ = "1.4.0"
+__version__ = "1.4.1"
 
 logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
