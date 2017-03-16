@@ -1,5 +1,8 @@
 ### Unreleased
 
+### 1.4.1 2017-03-15
+  - Log version number on startup
+
 ### 1.4.0 2017-02-17
   - Add new `/invalid-responses` endpoint for viewing invalid submissions
   - Add change log
