@@ -10,7 +10,7 @@ from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from structlog import wrap_logger
-from queue_publisher import QueuePublisher
+from queue_publisher import Publishers
 import os
 
 __version__ = "1.4.1"
@@ -19,6 +19,7 @@ logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT
 logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
 app.config['MONGODB_URL'] = settings.MONGODB_URL
+publishers = Publishers(logger)
 
 schema = Schema({
     'survey_id': str,
@@ -107,21 +108,6 @@ def save_response(bound_logger, survey_response):
         return None, False
 
 
-def queue_cs_notification(logger, mongo_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CS_QUEUE)
-    return publisher.publish_message(mongo_id)
-
-
-def queue_ctp_notification(logger, mongo_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CTP_QUEUE)
-    return publisher.publish_message(mongo_id)
-
-
-def queue_cora_notification(logger, mongo_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CORA_QUEUE)
-    return publisher.publish_message(mongo_id)
-
-
 @app.route('/responses', methods=['POST'])
 def do_save_response():
     survey_response = request.get_json(force=True)
@@ -136,11 +122,11 @@ def do_save_response():
         return jsonify(result="false")
 
     if survey_response['survey_id'] == 'census':
-        queued = queue_ctp_notification(bound_logger, inserted_id)
+        queued = publishers.ctp.publish_message(inserted_id)
     elif survey_response['survey_id'] == '144':
-        queued = queue_cora_notification(bound_logger, inserted_id)
+        queued = publishers.cora.publish_message(inserted_id)
     else:
-        queued = queue_cs_notification(bound_logger, inserted_id)
+        queued = publishers.cs.publish_message(inserted_id)
 
     if queued is False:
         return server_error("Unable to queue notification")
@@ -244,11 +230,11 @@ def do_queue():
     response = json.loads(result.response[0].decode('utf-8'))
 
     if response['survey_response']['survey_id'] == 'census':
-        queued = queue_ctp_notification(logger, mongo_id)
+        queued = publishers.ctp.publish_message(mongo_id)
     elif response['survey_response']['survey_id'] == '144':
-        queued = queue_cora_notification(logger, mongo_id)
+        queued = publishers.cora.publish_message(mongo_id)
     else:
-        queued = queue_cs_notification(logger, mongo_id)
+        queued = publishers.cs.publish_message(mongo_id)
 
     if queued is False:
         return server_error("Unable to queue notification")
