@@ -1,4 +1,5 @@
 ### Unreleased
+  - Persist QueuePublishers
 
 ### 1.5.0 2017-07-10
   - Timestamp all logs as UTC
