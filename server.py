@@ -10,7 +10,7 @@ from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from structlog import wrap_logger
-from queue_publisher import Publishers
+from queue_publisher import Publisher
 import os
 
 __version__ = "1.4.1"
@@ -19,7 +19,7 @@ logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT
 logger = wrap_logger(logging.getLogger(__name__))
 app = Flask(__name__)
 app.config['MONGODB_URL'] = settings.MONGODB_URL
-publishers = Publishers(logger)
+publisher = Publisher(logger)
 
 schema = Schema({
     'survey_id': str,
@@ -122,11 +122,11 @@ def do_save_response():
         return jsonify(result="false")
 
     if survey_response['survey_id'] == 'census':
-        queued = publishers.ctp.publish_message(inserted_id)
+        queued = publisher.ctp.publish_message(inserted_id)
     elif survey_response['survey_id'] == '144':
-        queued = publishers.cora.publish_message(inserted_id)
+        queued = publisher.cora.publish_message(inserted_id)
     else:
-        queued = publishers.cs.publish_message(inserted_id)
+        queued = publisher.cs.publish_message(inserted_id)
 
     if queued is False:
         return server_error("Unable to queue notification")
@@ -230,11 +230,11 @@ def do_queue():
     response = json.loads(result.response[0].decode('utf-8'))
 
     if response['survey_response']['survey_id'] == 'census':
-        queued = publishers.ctp.publish_message(mongo_id)
+        queued = publisher.ctp.publish_message(mongo_id)
     elif response['survey_response']['survey_id'] == '144':
-        queued = publishers.cora.publish_message(mongo_id)
+        queued = publisher.cora.publish_message(mongo_id)
     else:
-        queued = publishers.cs.publish_message(mongo_id)
+        queued = publisher.cs.publish_message(mongo_id)
 
     if queued is False:
         return server_error("Unable to queue notification")

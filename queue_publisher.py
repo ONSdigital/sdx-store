@@ -3,7 +3,7 @@ import pika
 import settings
 
 
-class Publishers():
+class Publisher():
     """Persists the QueuePublisher objects instantiated for CTP, CORA and
        CS endpoints.
 
@@ -25,7 +25,7 @@ class Publishers():
 
         self.ctp = QueuePublisher(self.logger,
                                   settings.RABBIT_URLS,
-                                  settings.RABBIT_CS_QUEUE)
+                                  settings.RABBIT_CTP_QUEUE)
 
         self.cora = QueuePublisher(self.logger,
                                    settings.RABBIT_URLS,
