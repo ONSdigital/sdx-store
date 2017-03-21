@@ -42,14 +42,14 @@ class TestStoreService(unittest.TestCase):
     def test_queue_fails_returns_500(self):
         mock_db = mongomock.MongoClient().db.collection
         with mock.patch('server.get_db_responses', return_value=mock_db):
-            with mock.patch('server.queue_cs_notification', return_value=False):
+            with mock.patch('server.publisher.cs.publish_message', return_value=False):
                 r = self.app.post(self.endpoint, data=test_message)
                 self.assertEqual(500, r.status_code)
 
     def test_queue_succeeds_returns_200(self):
         mock_db = mongomock.MongoClient().db.collection
         with mock.patch('server.get_db_responses', return_value=mock_db):
-            with mock.patch('server.queue_cs_notification', return_value=True):
+            with mock.patch('server.publisher.cs.publish_message', return_value=True):
                 r = self.app.post(self.endpoint, data=test_message)
                 self.assertEqual(200, r.status_code)
 

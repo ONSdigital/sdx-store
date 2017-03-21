@@ -1,5 +1,36 @@
 import pika
 
+import settings
+
+
+class Publisher():
+    """Persists the QueuePublisher objects instantiated for CTP, CORA and
+       CS endpoints.
+
+    Args:
+        logger (Logging.logger): Variable holding a logger object.
+
+    Attributes:
+        cora (QueuePublisher): Cora queue QueuePublisher object.
+        ctp (QueuePublisher): CTP queue QueuePublisher object.
+        cs (QueuePublisher): CS queue QueuePublisher object.
+        """
+
+    def __init__(self, logger):
+        self.logger = logger
+
+        self.cs = QueuePublisher(self.logger,
+                                 settings.RABBIT_URLS,
+                                 settings.RABBIT_CS_QUEUE)
+
+        self.ctp = QueuePublisher(self.logger,
+                                  settings.RABBIT_URLS,
+                                  settings.RABBIT_CTP_QUEUE)
+
+        self.cora = QueuePublisher(self.logger,
+                                   settings.RABBIT_URLS,
+                                   settings.RABBIT_CORA_QUEUE)
+
 
 class QueuePublisher(object):
 
