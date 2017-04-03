@@ -70,15 +70,3 @@ Some of important environment variables available for configuration are listed b
 | RABBIT_CS_QUEUE         | `sdx-cs-survey-notifications`         | Name of the Rabbit CS queue
 | RABBIT_CTP_QUEUE        | `sdx-ctp-survey-notifications`        | Name of the Rabbit CTP queue
 | RABBIT_CORA_QUEUE       | `sdx-cora-survey-notifications`       | Name of the Rabbit CORA queue
-
-
-
-
-
-
-
-
-
-
-
-
