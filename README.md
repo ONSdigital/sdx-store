@@ -59,3 +59,26 @@ A result object consists of three fields:
 
 The `added_ms` value can be used in queries to filter to only return results on or after the given timestamp.
 This is intended to be used for paging and batching of result.
+
+## Configuration
+
+Some of important environment variables available for configuration are listed below:
+
+| Environment Variable    | Default                               | Description
+|-------------------------|---------------------------------------|----------------
+| MONGODB_URL             | `mongodb://localhost:27017`           | Location of MongoDB
+| RABBIT_CS_QUEUE         | `sdx-cs-survey-notifications`         | Name of the Rabbit CS queue
+| RABBIT_CTP_QUEUE        | `sdx-ctp-survey-notifications`        | Name of the Rabbit CTP queue
+| RABBIT_CORA_QUEUE       | `sdx-cora-survey-notifications`       | Name of the Rabbit CORA queue
+
+
+
+
+
+
+
+
+
+
+
+
