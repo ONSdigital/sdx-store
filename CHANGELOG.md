@@ -1,5 +1,6 @@
 ### Unreleased
   - Persist QueuePublishers
+  - Add environment variables to README
 
 ### 1.4.1 2017-03-15
   - Log version number on startup
