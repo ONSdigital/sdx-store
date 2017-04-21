@@ -240,7 +240,5 @@ def healthcheck():
 
 
 if __name__ == '__main__':
-    # Startup
-    create_tables()
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
