@@ -3,12 +3,14 @@ python:
     - "3.5"
     - "3.4"
 sudo: required
+
 before_install:
     - git clone https://github.com/ONSdigital/sdx-common.git
     - pip3 install ./sdx-common
 install:
     - make build
     - pip install codecov
+
 before_script:
     - psql -c 'create database test;' -U postgres
     - psql -c "grant all privileges on database test to postgres;" -U postgres
@@ -22,3 +24,4 @@ after_success:
     - codecov
 addons:
   postgresql: "9.6"
+
