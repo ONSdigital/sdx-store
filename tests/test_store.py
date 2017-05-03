@@ -63,7 +63,6 @@ class TestStoreService(unittest.TestCase):
             db_mock.side_effect = SQLAlchemyError
             r = self.app.post(self.endpoints['responses'], data=test_message)
             self.assertEqual(500, r.status_code)
-        db.drop_all()
 
     def test_queue_fails_returns_500(self):
         with mock.patch('server.publisher.cs.publish_message', return_value=False):
@@ -107,7 +106,6 @@ class TestStoreService(unittest.TestCase):
 
             self.assertIsNotNone(r.data)
             self.assertEqual(200, r.status_code)
-            db.drop_all()
 
         db.session.remove()
         db.drop_all()
@@ -116,7 +114,6 @@ class TestStoreService(unittest.TestCase):
         r = self.app.get(self.endpoints['responses'] + '?testing=123')
         self.assertEqual(400, r.status_code)
 
-"""
     def test_get_responses_valid_and_invalid_params(self):
         r = self.app.get(self.endpoints['responses'] + '?survey_id=123&testing=123')
         self.assertEqual(400, r.status_code)
@@ -166,4 +163,3 @@ class TestStoreService(unittest.TestCase):
             healthMock.side_effect = SQLAlchemyError
             r = self.app.get(self.endpoints['healthcheck'])
             self.assertEqual(500, r.status_code)
-"""

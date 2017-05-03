@@ -31,6 +31,7 @@ updated_message = '''
   "survey_id": "194826",
   "version": "0.0.1",
   "tx_id": "e7d45533-71a9-44fe-8077-621d1ab423cd",
+<<<<<<< HEAD
   "collection": {
     "exercise_sid": "hfjdskf",
     "instrument_id": "10",
@@ -83,6 +84,8 @@ invalid_message = '''
   "survey_id": "194826",
   "version": "0.0.1",
   "tx_id": "ed7d29ed-612b-e981-d5ed-0e2e3c9951e3",
+=======
+>>>>>>> Updating tests
   "collection": {
     "exercise_sid": "hfjdskf",
     "instrument_id": "10",

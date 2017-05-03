@@ -181,6 +181,12 @@ def test_sql(connection):
     connection.scalar(select([1]))
 
 
+def _test_sql(connection):
+    # Run a SELECT 1 to test the database connection
+    logger.debug("Executing select 1")
+    connection.scalar(select([1]))
+
+
 @app.errorhandler(500)
 def server_error(error=None):
     logger.error(error, status=500)
