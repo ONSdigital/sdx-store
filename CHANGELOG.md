@@ -1,6 +1,7 @@
 ### Unreleased
   - Persist QueuePublishers
   - Add environment variables to README
+  - Remove environment variable defaults
 
 ### 1.5.0 2017-07-10
   - Timestamp all logs as UTC
