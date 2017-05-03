@@ -7,10 +7,10 @@ import os
 from flask import Flask, request, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 from structlog import wrap_logger
-from sqlalchemy import inspect
+from sqlalchemy import inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import SQLAlchemyError
-from voluptuous import Schema, Coerce, All, Range
+from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
 from werkzeug.exceptions import BadRequest
 
 from queue_publisher import QueuePublisher
@@ -56,11 +56,18 @@ class InvalidUsageError(Exception):
 
 class SurveyResponse(db.Model):
     __tablename__ = 'responses'
-    tx_id = db.Column("tx_id", UUID, primary_key=True)
+    tx_id = db.Column("tx_id",
+                      UUID,
+                      primary_key=True)
+
     ts = db.Column("ts", db.TIMESTAMP(timezone=True),
                    server_default=db.func.now(),
                    onupdate=db.func.now())
-    invalid = db.Column("invalid", db.Boolean)
+
+    invalid = db.Column("invalid",
+                        db.Boolean,
+                        default=False)
+
     data = db.Column("data", JSONB)
 
     def __init__(self, tx_id, invalid, data):
@@ -68,18 +75,44 @@ class SurveyResponse(db.Model):
         self.invalid = invalid
         self.data = data
 
+    def __repr__(self):
+        return '<SurveyResponse {}>'.format(self.tx_id)
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 def create_tables():
     db.create_all()
 
 
-def get_responses(tx_id=None, invalid_flag=None):
+def get_responses(tx_id=None, invalid=None):
     try:
-        r = SurveyResponse.query.filter_by(tx_id=tx_id, invalid=invalid_flag).all()
-        logger.info("Retrieved results from db", tx_id=tx_id, invalid_flag=invalid_flag)
+        schema(request.args)
+    except MultipleInvalid:
+        raise InvalidUsageError("Request args failed schema validation, args={}".format(request.args))
+
+    page = request.args.get('page')
+    per_page = request.args.get('per_page')
+
+    # paging defaults
+    if not page:
+        page = 1
+    else:
+        page = int(page)
+    if not per_page:
+        per_page = 100
+    else:
+        per_page = int(per_page)
+
+    logger.info("TX_ID: {}".format(tx_id))
+    kwargs = {k: v for k, v in {'tx_id': tx_id, 'invalid': invalid}.items() if v is not None}
+    try:
+        r = SurveyResponse.query.filter_by(**kwargs).paginate(page, per_page)
+        logger.info("Retrieved results from db", tx_id=tx_id, invalid=invalid)
         return r
     except SQLAlchemyError as e:
-        logger.error("Could not retrieve results from db", tx_id=tx_id, invalid_flag=invalid_flag)
+        logger.error("Could not retrieve results from db", tx_id=tx_id, invalid=invalid, e=e)
         return None
 
 
@@ -122,7 +155,7 @@ def save_response(bound_logger, survey_response):
         tx_id = survey_response["tx_id"]
     except KeyError:
         raise InvalidUsageError("Missing transaction id. Unable to save response",
-                                500)
+                                400)
     else:
         response = SurveyResponse(tx_id=tx_id,
                                   invalid=invalid,
@@ -137,6 +170,12 @@ def save_response(bound_logger, survey_response):
                               inserted_id=tx_id,
                               invalid=invalid)
         return invalid
+
+
+def _test_sql(connection):
+    # Run a SELECT 1 to test the database connection
+    logger.debug("Executing select 1")
+    connection.scalar(select([1]))
 
 
 @app.errorhandler(500)
@@ -195,7 +234,7 @@ def do_save_response():
 
 @app.route('/invalid-responses', methods=['GET'])
 def do_get_invalid_responses():
-    responses = get_responses(invalid_flag=True)
+    responses = get_responses(invalid=True)
 
     if responses:
         jsonify(responses)
@@ -205,18 +244,21 @@ def do_get_invalid_responses():
 
 @app.route('/responses', methods=['GET'])
 def do_get_responses():
-    return jsonify(get_responses(invalid_flag=False))
+    page = get_responses(invalid=False)
+
+    try:
+        return jsonify([item.to_dict() for item in page.items])
+    except AttributeError:
+        return jsonify({}), 404
 
 
 @app.route('/responses/<tx_id>', methods=['GET'])
 def do_get_response(tx_id):
     result = get_responses(tx_id=tx_id)
     if result:
-        r = [object_as_dict(r) for r in result]
-        tx_id = result[0].tx_id
+        r = [object_as_dict(r) for r in result.items]
         return jsonify(r)
     else:
-        logger.warning("Could not retrieve response", tx_id=tx_id)
         return jsonify({}), 404
 
 
@@ -245,7 +287,15 @@ def do_queue():
 
 @app.route('/healthcheck', methods=['GET'])
 def healthcheck():
-    return jsonify({'status': 'OK'})
+    try:
+        logger.info("Checking database connection")
+        conn = db.engine.connect()
+        _test_sql(conn)
+    except SQLAlchemyError as e:
+        logger.error("Failed to connect to database", exception=str(e))
+        return server_error()
+    finally:
+        return jsonify({'status': 'OK'})
 
 
 if __name__ == '__main__':
