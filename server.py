@@ -174,7 +174,7 @@ def save_response(bound_logger, survey_response):
         return invalid
 
 
-def _test_sql(connection):
+def test_sql(connection):
     """Run a SELECT 1 to test the database connection"""
     logger.debug("Executing select 1")
     connection.scalar(select([1]))
@@ -293,10 +293,10 @@ def healthcheck():
     try:
         logger.info("Checking database connection")
         conn = db.engine.connect()
-        _test_sql(conn)
-    except Exception as e:
-        logger.error("Failed to connect to database", exception=str(e))
-        return server_error()
+        test_sql(conn)
+    except SQLAlchemyError:
+        logger.error("Failed to connect to database")
+        return server_error(500)
     else:
         return jsonify({'status': 'OK'})
 

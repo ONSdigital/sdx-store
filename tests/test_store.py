@@ -148,7 +148,7 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(200, r.status_code)
 
     def test_healthcheck_bad_returns_500(self):
-        with mock.patch('server._test_sql') as healthMock:
-            healthMock.side_effect = SQLAlchemyError()
-            r = self.app.get(self.endpoints['healthcheck'])  # noqa
+        with mock.patch('server.test_sql') as healthMock:
+            healthMock.side_effect = SQLAlchemyError
+            r = self.app.get(self.endpoints['healthcheck'])
             self.assertEqual(500, r.status_code)
