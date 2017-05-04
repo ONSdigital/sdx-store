@@ -4,13 +4,13 @@ import logging
 import logging.handlers
 import os
 
-from flask import Flask, request, jsonify, Response
+from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
-from structlog import wrap_logger
 from sqlalchemy import inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import SQLAlchemyError
-from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
+from structlog import wrap_logger
+from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 
 from queue_publisher import QueuePublisher
@@ -28,13 +28,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFIC
 db = SQLAlchemy(app=app)
 
 schema = Schema({
-    'survey_id': str,
-    'form': str,
-    'ru_ref': str,
-    'period': str,
     'added_ms': Coerce(int),
+    'form': str,
+    'page': All(Coerce(int), Range(min=1)),
+    'period': str,
     'per_page': All(Coerce(int), Range(min=1, max=100)),
-    'page': All(Coerce(int), Range(min=1))
+    'ru_ref': str,
+    'survey_id': str,
 })
 
 
@@ -60,7 +60,8 @@ class SurveyResponse(db.Model):
                       UUID,
                       primary_key=True)
 
-    ts = db.Column("ts", db.TIMESTAMP(timezone=True),
+    ts = db.Column("ts",
+                   db.TIMESTAMP(timezone=True),
                    server_default=db.func.now(),
                    onupdate=db.func.now())
 
@@ -83,6 +84,7 @@ class SurveyResponse(db.Model):
 
 
 def create_tables():
+    logger.info("Creaing tables")
     db.create_all()
 
 
@@ -90,12 +92,13 @@ def get_responses(tx_id=None, invalid=None):
     try:
         schema(request.args)
     except MultipleInvalid:
-        raise InvalidUsageError("Request args failed schema validation, args={}".format(request.args))
+        raise InvalidUsageError("Request args failed schema validation",
+                                status_code=400,
+                                payload=request.args)
 
     page = request.args.get('page')
     per_page = request.args.get('per_page')
 
-    # paging defaults
     if not page:
         page = 1
     else:
@@ -105,15 +108,14 @@ def get_responses(tx_id=None, invalid=None):
     else:
         per_page = int(per_page)
 
-    logger.info("TX_ID: {}".format(tx_id))
     kwargs = {k: v for k, v in {'tx_id': tx_id, 'invalid': invalid}.items() if v is not None}
+
     try:
         r = SurveyResponse.query.filter_by(**kwargs).paginate(page, per_page)
         logger.info("Retrieved results from db", tx_id=tx_id, invalid=invalid)
         return r
     except SQLAlchemyError as e:
         logger.error("Could not retrieve results from db", tx_id=tx_id, invalid=invalid, e=e)
-        return None
 
 
 def json_serial(obj):
@@ -163,7 +165,7 @@ def save_response(bound_logger, survey_response):
         try:
             db.session.add(response)
             db.session.commit()
-        except SQLAlchemyError as e:
+        except SQLAlchemyError:
             raise server_error("Unable to save response")
         else:
             bound_logger.info("Response saved",
@@ -173,7 +175,7 @@ def save_response(bound_logger, survey_response):
 
 
 def _test_sql(connection):
-    # Run a SELECT 1 to test the database connection
+    """Run a SELECT 1 to test the database connection"""
     logger.debug("Executing select 1")
     connection.scalar(select([1]))
 
@@ -193,7 +195,7 @@ def server_error(error=None):
 
 @app.errorhandler(InvalidUsageError)
 def invalid_usage_error(error=None):
-    logger.error(error.message, status=500)
+    logger.error(error.message, status=400, payload=error.payload)
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
@@ -204,8 +206,9 @@ def do_save_response():
     try:
         survey_response = request.get_json(force=True)
     except BadRequest:
-        msg = "Invalid POST request to /response"
-        raise InvalidUsageError(msg, status_code=400)
+        raise InvalidUsageError("Invalid POST request to /response",
+                                status_code=400,
+                                payload=request.args)
 
     metadata = survey_response['metadata']
 
@@ -291,10 +294,10 @@ def healthcheck():
         logger.info("Checking database connection")
         conn = db.engine.connect()
         _test_sql(conn)
-    except SQLAlchemyError as e:
+    except Exception as e:
         logger.error("Failed to connect to database", exception=str(e))
         return server_error()
-    finally:
+    else:
         return jsonify({'status': 'OK'})
 
 

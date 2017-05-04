@@ -135,7 +135,11 @@ class TestStoreService(unittest.TestCase):
         r = self.app.get(self.endpoints['responses'] + '?per_page=101')
         self.assertEqual(400, r.status_code)
 
-    def test_min_range_page(self):
+    def test_min_range_page_ok(self):
+        r = self.app.get(self.endpoints['responses'] + '?page=1')
+        self.assertEqual(200, r.status_code)
+
+    def test_min_range_page_bad(self):
         r = self.app.get(self.endpoints['responses'] + '?page=0')
         self.assertEqual(400, r.status_code)
 
