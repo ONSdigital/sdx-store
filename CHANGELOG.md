@@ -1,4 +1,5 @@
 ### Unreleased
+  - Use Postgres backend via SQLAlchemy ORM.
   - Persist QueuePublishers
   - Add environment variables to README
 
