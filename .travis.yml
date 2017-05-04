@@ -5,5 +5,13 @@ python:
 sudo: required
 install:
     - make
+before_script:
+    - psql -c 'create database test;' -U postgres
+    - psql -c "grant all privileges on database test to postgres;" -U postgres
 script:
     - make test
+services:
+    - postgresql
+dist: trusty
+addons:
+  postgresql: "9.5"
