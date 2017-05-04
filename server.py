@@ -182,7 +182,7 @@ def test_sql(connection):
 
 
 def _test_sql(connection):
-    # Run a SELECT 1 to test the database connection
+    """Run a SELECT 1 to test the database connection"""
     logger.debug("Executing select 1")
     connection.scalar(select([1]))
 
