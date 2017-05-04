@@ -24,4 +24,3 @@ after_success:
     - codecov
 addons:
   postgresql: "9.6"
-
