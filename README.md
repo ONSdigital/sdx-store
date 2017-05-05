@@ -45,9 +45,16 @@ The `/responses` and `/invalid-responses` endpoints support paging using URL que
 
 Some of important environment variables available for configuration are listed below:
 
-| Environment Variable    | Default                               | Description
+| Environment Variable    | Example                               | Description
 |-------------------------|---------------------------------------|----------------
 | MONGODB_URL             | `mongodb://localhost:27017`           | Location of MongoDB
 | RABBIT_CS_QUEUE         | `sdx-cs-survey-notifications`         | Name of the Rabbit CS queue
 | RABBIT_CTP_QUEUE        | `sdx-ctp-survey-notifications`        | Name of the Rabbit CTP queue
 | RABBIT_CORA_QUEUE       | `sdx-cora-survey-notifications`       | Name of the Rabbit CORA queue
+| RABBITMQ_HOST           | `rabbit`                              | Name of the Rabbit queue
+| RABBITMQ_PORT           | `5672`                                | RabbitMQ port
+| RABBITMQ_DEFAULT_USER   | `rabbit`                              | RabbitMQ username
+| RABBITMQ_DEFAULT_PASS   | `rabbit`                              | RabbitMQ password
+| RABBITMQ_DEFAULT_VHOST  | `%2f`                                 | RabbitMQ virtual host
+| RABBITMQ_HOST2          | `rabbit`                              | RabbitMQ name
+| RABBITMQ_PORT2          | `rabbit`                              | RabbitMQ port
