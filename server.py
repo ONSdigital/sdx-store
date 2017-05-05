@@ -250,7 +250,6 @@ def do_save_response():
     if not queued:
         return server_error("Unable to queue notification")
 
-    bound_logger.info("Notification published successfully")
     publisher.logger = logger
     return jsonify(result="ok")
 
