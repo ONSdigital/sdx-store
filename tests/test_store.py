@@ -10,11 +10,11 @@ import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
 
-os.environ['POSTGRES_HOST'] = '0.0.0.0'
-os.environ['POSTGRES_PORT'] = '5432'
-os.environ['POSTGRES_NAME'] = 'postgres'
-os.environ['POSTGRES_USER'] = 'postgres'
-os.environ['POSTGRES_PASSWORD'] = 'secret'
+os.environ['SDX_STORE_POSTGRES_HOST'] = '0.0.0.0'
+os.environ['SDX_STORE_POSTGRES_PORT'] = '5432'
+os.environ['SDX_STORE_POSTGRES_NAME'] = 'postgres'
+os.environ['SDX_STORE_POSTGRES_USER'] = 'postgres'
+os.environ['SDX_STORE_POSTGRES_PASSWORD'] = 'secret'
 os.environ['RABBITMQ_HOST'] = 'rabbit'
 os.environ['RABBITMQ_PORT'] = '5672'
 os.environ['RABBITMQ_DEFAULT_USER'] = 'rabbit'

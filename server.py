@@ -302,7 +302,7 @@ def do_queue():
     else:
         queued = publisher.cs.publish_message(tx_id)
 
-    if queued is False:
+    if not queued:
         return server_error("Unable to queue response")
 
     return jsonify(result="ok")
