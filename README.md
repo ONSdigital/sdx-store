@@ -2,21 +2,19 @@
 
 [![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store)
 
-Scalable service for storing SDX data (backed by MongoDB).
+Scalable service for storing SDX data (backed by PostgreSQL).
 
 ## Prerequisites
 
-A running instance of MongoDB. The service connects to `mongodb://localhost:27017` by default.
-
-To override this export a `MONGODB_URL` environment variable.
+A running instance of PostgreSQL.
 
 ## Installation
 
-Using virtualenv and pip, create a new environment and install within using:
+Using virtualenv, create a new environment, then install dependencies using:
 
-    $ pip install -r requirements.txt
+    $ make build
 
-It's also possible to install within a container using docker. From the sdx-sequence directory:
+It's also possible to install within a container using docker. From the sdx-store directory:
 
     $ docker build -t sdx-store .
 
@@ -24,17 +22,24 @@ It's also possible to install within a container using docker. From the sdx-sequ
 
 Start the sdx-store service using the following command:
 
-    python server.py
+    make start
 
 ## API
 
 There are six endpoints:
- * `GET /invalid-responses` - returns a json response of all invalid responses in the connected database
+ * `GET /invalid-responses` - returns a json response of all invalid survey responses in the connected database
  * `POST /queue` - Publishes a message to a corresponding rabbit message queue based on the message content. Returns a 200 response and JSON value `{"result": "ok"}` if the publish succeeds or a 500 response with JSON value `{"status": 500, "message": <error>}` if it does not.
  * `GET /healthcheck` - returns a json response with key/value pairs describing the service state
  * `POST /responses` - store a json survey response
- * `GET /responses` - retrieve a set of survey responses matching the query parameters
+ * `GET /responses` - retrieve a JSON response of all valid survey responses in the connected responses.
  * `GET /responses/<tx_id>` - retrieve a survey by id
+
+### Query Parameters
+
+The `/responses` and `/invalid-responses` endpoints support paging using URL query parameters.
+
+* `per_page`: The number of responses to return per page. Must be in the range 1-100. Defaults to 1.
+* `page`: The page number to return. Must be 1 or higher if set. Defaults to 1.
 
 ## Configuration
 

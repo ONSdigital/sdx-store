@@ -84,7 +84,7 @@ class SurveyResponse(db.Model):
 
 
 def create_tables():
-    logger.info("Creaing tables")
+    logger.info("Creating tables")
     db.create_all()
 
 
@@ -115,7 +115,10 @@ def get_responses(tx_id=None, invalid=None):
         logger.info("Retrieved results from db", tx_id=tx_id, invalid=invalid)
         return r
     except SQLAlchemyError as e:
-        logger.error("Could not retrieve results from db", tx_id=tx_id, invalid=invalid, e=e)
+        logger.error("Could not retrieve results from db",
+                     tx_id=tx_id,
+                     invalid=invalid,
+                     error=e)
 
 
 def json_serial(obj):
@@ -169,7 +172,6 @@ def save_response(bound_logger, survey_response):
             raise server_error("Unable to save response")
         else:
             bound_logger.info("Response saved",
-                              inserted_id=tx_id,
                               invalid=invalid)
         return invalid
 
