@@ -270,7 +270,8 @@ def do_get_responses():
 
     try:
         return jsonify([item.to_dict() for item in page.items])
-    except AttributeError:
+    except AttributeError as e:
+        logger.error("No items in page", error=e)
         return jsonify({}), 404
 
 
