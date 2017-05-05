@@ -91,26 +91,22 @@ def _get_value(key):
 
 
 def check_default_env_vars():
+    env_vars = ["RABBIT_CS_QUEUE", "RABBIT_CTP_QUEUE", "RABBIT_CORA_QUEUE",
+                "RABBITMQ_HOST", "RABBITMQ_PORT", "RABBITMQ_DEFAULT_USER",
+                "RABBITMQ_DEFAULT_PASS", "RABBITMQ_DEFAULT_VHOST",
+                "RABBITMQ_HOST2", "RABBITMQ_PORT2",
+                ]
 
-    env_vars = ["MONGODB_URL", "RABBIT_CS_QUEUE", "RABBIT_CTP_QUEUE", "RABBIT_CORA_QUEUE",
-                "RABBITMQ_HOST", "RABBITMQ_PORT", "RABBITMQ_DEFAULT_USER", "RABBITMQ_DEFAULT_PASS",
-                "RABBITMQ_DEFAULT_VHOST", "RABBITMQ_HOST2", "RABBITMQ_PORT2"]
-
+    missing = False
     for i in env_vars:
         try:
             _get_value(i)
         except ValueError as e:
             logger.error("Unable to start service", error=e)
-            missing_env_var = True
+            missing = True
 
-    if missing_env_var is True:
+    if missing is True:
         sys.exit(1)
-
-
-def get_db_responses(invalid_flag=False):
-    mongo_client = MongoClient(app.config['MONGODB_URL'])
-    if invalid_flag:
-        return mongo_client.sdx_store.invalid_responses
 
 
 def create_tables():

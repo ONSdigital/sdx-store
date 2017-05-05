@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import unittest
 
 import mock
@@ -8,6 +9,23 @@ from sqlalchemy.exc import SQLAlchemyError
 import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
+
+os.environ['POSTGRES_HOST'] = '0.0.0.0'
+os.environ['POSTGRES_PORT'] = '5432'
+os.environ['POSTGRES_NAME'] = 'postgres'
+os.environ['POSTGRES_USER'] = 'postgres'
+os.environ['POSTGRES_PASSWORD'] = 'secret'
+os.environ['RABBITMQ_HOST'] = 'rabbit'
+os.environ['RABBITMQ_PORT'] = '5672'
+os.environ['RABBITMQ_DEFAULT_USER'] = 'rabbit'
+os.environ['RABBITMQ_DEFAULT_PASS'] = 'rabbit'
+os.environ['RABBITMQ_DEFAULT_VHOST'] = '2%f'
+os.environ['RABBITMQ_HOST2'] = '0.0.0.0'
+os.environ['RABBITMQ_PORT2'] = '5433'
+os.environ['RABBIT_CORA_QUEUE'] = 'sdx-cora-survey-notifications'
+os.environ['RABBIT_CTP_QUEUE'] = 'sdx-ctp-survey-notifications'
+os.environ['RABBIT_CS_QUEUE'] = 'sdx-cs-survey-notifications'
+
 import server
 from server import db, InvalidUsageError, logger
 
@@ -36,12 +54,17 @@ class TestStoreService(unittest.TestCase):
         self.postgres = Postgresql()
         self.app = server.app.test_client()
         self.app.testing = True
+        server.check_default_env_vars()
         server.create_tables()
 
     def tearDown(self):
         db.session.remove()
         db.drop_all()
         self.postgres.stop()
+
+    def test_missing_envvar_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            server._get_value('TEST')
 
     # /responses POST
     def test_empty_post_request(self):
