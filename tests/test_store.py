@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import unittest
 
 import mock
@@ -9,7 +10,6 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
-
 import server
 from server import db, InvalidUsageError, logger
 
@@ -38,12 +38,17 @@ class TestStoreService(unittest.TestCase):
         self.postgres = Postgresql()
         self.app = server.app.test_client()
         self.app.testing = True
+        server.check_default_env_vars()
         server.create_tables()
 
     def tearDown(self):
         db.session.remove()
         db.drop_all()
         self.postgres.stop()
+
+    def test_missing_envvar_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            server._get_value('TEST')
 
     # /responses POST
     def test_empty_post_request(self):
