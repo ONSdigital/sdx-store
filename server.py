@@ -14,13 +14,15 @@ from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 
-from queue_publisher import QueuePublisher
+from queue_publisher import Publisher
 import settings
 
 __version__ = "1.4.1"
 
 logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
+
+publisher = Publisher(logger)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = settings.DB_URI
@@ -164,21 +166,6 @@ def object_as_dict(obj):
             for c in inspect(obj).mapper.column_attrs}
 
 
-def queue_cs_notification(logger, tx_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CS_QUEUE)
-    return publisher.publish_message(tx_id)
-
-
-def queue_ctp_notification(logger, tx_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CTP_QUEUE)
-    return publisher.publish_message(tx_id)
-
-
-def queue_cora_notification(logger, tx_id):
-    publisher = QueuePublisher(logger, settings.RABBIT_URLS, settings.RABBIT_CORA_QUEUE)
-    return publisher.publish_message(tx_id)
-
-
 def save_response(bound_logger, survey_response):
     invalid = survey_response.get("invalid")
 
@@ -244,6 +231,8 @@ def do_save_response():
                                ru_ref=metadata['ru_ref'],
                                tx_id=survey_response['tx_id'])
 
+    publisher.logger = bound_logger
+
     invalid = save_response(bound_logger, survey_response)
 
     if invalid is True:
@@ -252,14 +241,16 @@ def do_save_response():
     tx_id = survey_response['tx_id']
 
     if survey_response['survey_id'] == 'census':
-        queued = queue_ctp_notification(bound_logger, tx_id)
+        queued = publisher.ctp.publish_message(tx_id)
     elif survey_response['survey_id'] == '144':
-        queued = queue_cora_notification(bound_logger, tx_id)
+        queued = publisher.cora.publish_message(tx_id)
     else:
-        queued = queue_cs_notification(bound_logger, tx_id)
+        queued = publisher.cs.publish_message(tx_id)
 
     if not queued:
         return server_error("Unable to queue notification")
+
+    publisher.logger = logger
     return jsonify(result="ok")
 
 
@@ -304,11 +295,11 @@ def do_queue():
     response = json.loads(result.response[0].decode('utf-8'))
 
     if response['survey_response']['survey_id'] == 'census':
-        queued = queue_ctp_notification(logger, tx_id)
+        queued = publisher.ctp.publish_message(tx_id)
     elif response['survey_response']['survey_id'] == '144':
-        queued = queue_cora_notification(logger, tx_id)
+        queued = publisher.cora.publish_message(tx_id)
     else:
-        queued = queue_cs_notification(logger, tx_id)
+        queued = publisher.cs.publish_message(tx_id)
 
     if queued is False:
         return server_error("Unable to queue response")

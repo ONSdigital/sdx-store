@@ -85,7 +85,7 @@ class TestStoreService(unittest.TestCase):
             self.assertEqual(500, r.status_code)
 
     def test_queue_fails_returns_500(self):
-        with mock.patch('server.queue_cs_notification', return_value=False):
+        with mock.patch('server.publisher.cs.publish_message', return_value=False):
             r = self.app.post(self.endpoints['responses'], data=test_message)
             self.assertEqual(500, r.status_code)
 
@@ -93,7 +93,7 @@ class TestStoreService(unittest.TestCase):
         db.drop_all()
 
     def test_queue_succeeds_returns_200(self):
-        with mock.patch('server.queue_cs_notification', return_value=True):
+        with mock.patch('server.publisher.cs.publish_message', return_value=True):
             r = self.app.post(self.endpoints['responses'], data=test_message)
             self.assertEqual(200, r.status_code)
 
@@ -106,7 +106,7 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(404, r.status_code)
 
     def test_get_valid_id_returns_id_and_200(self):
-        with mock.patch('server.queue_cs_notification', return_value=True):
+        with mock.patch('server.publisher.cs.publish_message', return_value=True):
             test_json = json.loads(updated_message)
             expected_id = test_json['tx_id']
 
@@ -131,7 +131,7 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(400, r.status_code)
 
     def test_get_responses_per_page(self):
-        with mock.patch('server.queue_cs_notification', return_value=True):
+        with mock.patch('server.publisher.cs.publish_message', return_value=True):
             self.app.post(self.endpoints['responses'],
                           data=updated_message,
                           content_type='application/json')
