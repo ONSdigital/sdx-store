@@ -33,6 +33,12 @@ schema = Schema({
 })
 
 
+def _get_value(key):
+    value = os.getenv(key)
+    if not value:
+        raise ValueError("No value set for " + key)
+
+
 def check_default_env_vars():
 
     env_vars = ["MONGODB_URL", "RABBIT_CS_QUEUE", "RABBIT_CTP_QUEUE", "RABBIT_CORA_QUEUE",
@@ -40,8 +46,10 @@ def check_default_env_vars():
                 "RABBITMQ_DEFAULT_VHOST", "RABBITMQ_HOST2", "RABBITMQ_PORT2"]
 
     for i in env_vars:
-        if os.getenv(i) is None:
-            logger.error("Required env var missing", missing_env_var=i)
+        try:
+            _get_value(i)
+        except ValueError as e:
+            logger.error("Unable to start service", error=e)
             missing_env_var = True
 
     if missing_env_var is True:
