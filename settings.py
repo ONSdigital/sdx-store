@@ -4,25 +4,25 @@ import logging
 LOGGING_FORMAT = "%(asctime)s|%(levelname)s: sdx-store: %(message)s"
 LOGGING_LEVEL = logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-RABBIT_CS_QUEUE = os.getenv('RABBIT_CS_QUEUE', 'sdx-cs-survey-notifications')
-RABBIT_CTP_QUEUE = os.getenv('RABBIT_CTP_QUEUE', 'sdx-ctp-survey-notifications')
-RABBIT_CORA_QUEUE = os.getenv('RABBIT_CORA_QUEUE', 'sdx-cora-survey-notifications')
+MONGODB_URL = os.getenv("MONGODB_URL")
+RABBIT_CS_QUEUE = os.getenv('RABBIT_CS_QUEUE')
+RABBIT_CTP_QUEUE = os.getenv('RABBIT_CTP_QUEUE')
+RABBIT_CORA_QUEUE = os.getenv('RABBIT_CORA_QUEUE')
 
 RABBIT_URL = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
-    hostname=os.getenv('RABBITMQ_HOST', 'rabbit'),
-    port=os.getenv('RABBITMQ_PORT', 5672),
-    user=os.getenv('RABBITMQ_DEFAULT_USER', 'rabbit'),
-    password=os.getenv('RABBITMQ_DEFAULT_PASS', 'rabbit'),
-    vhost=os.getenv('RABBITMQ_DEFAULT_VHOST', '%2f')
+    hostname=os.getenv('RABBITMQ_HOST'),
+    port=os.getenv('RABBITMQ_PORT'),
+    user=os.getenv('RABBITMQ_DEFAULT_USER'),
+    password=os.getenv('RABBITMQ_DEFAULT_PASS'),
+    vhost=os.getenv('RABBITMQ_DEFAULT_VHOST')
 )
 
 RABBIT_URL2 = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
-    hostname=os.getenv('RABBITMQ_HOST2', 'rabbit'),
-    port=os.getenv('RABBITMQ_PORT2', 5672),
-    user=os.getenv('RABBITMQ_DEFAULT_USER', 'rabbit'),
-    password=os.getenv('RABBITMQ_DEFAULT_PASS', 'rabbit'),
-    vhost=os.getenv('RABBITMQ_DEFAULT_VHOST', '%2f')
+    hostname=os.getenv('RABBITMQ_HOST2'),
+    port=os.getenv('RABBITMQ_PORT2'),
+    user=os.getenv('RABBITMQ_DEFAULT_USER'),
+    password=os.getenv('RABBITMQ_DEFAULT_PASS'),
+    vhost=os.getenv('RABBITMQ_DEFAULT_VHOST')
 )
 
 RABBIT_URLS = [RABBIT_URL, RABBIT_URL2]

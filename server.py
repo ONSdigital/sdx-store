@@ -12,6 +12,7 @@ from bson.errors import InvalidId
 from structlog import wrap_logger
 from queue_publisher import Publisher
 import os
+import sys
 
 __version__ = "1.4.1"
 
@@ -30,6 +31,29 @@ schema = Schema({
     'per_page': All(Coerce(int), Range(min=1, max=100)),
     'page': All(Coerce(int), Range(min=1))
 })
+
+
+def _get_value(key):
+    value = os.getenv(key)
+    if not value:
+        raise ValueError("No value set for " + key)
+
+
+def check_default_env_vars():
+
+    env_vars = ["MONGODB_URL", "RABBIT_CS_QUEUE", "RABBIT_CTP_QUEUE", "RABBIT_CORA_QUEUE",
+                "RABBITMQ_HOST", "RABBITMQ_PORT", "RABBITMQ_DEFAULT_USER", "RABBITMQ_DEFAULT_PASS",
+                "RABBITMQ_DEFAULT_VHOST", "RABBITMQ_HOST2", "RABBITMQ_PORT2"]
+
+    for i in env_vars:
+        try:
+            _get_value(i)
+        except ValueError as e:
+            logger.error("Unable to start service", error=e)
+            missing_env_var = True
+
+    if missing_env_var is True:
+        sys.exit(1)
 
 
 def get_db_responses(invalid_flag=False):
@@ -250,5 +274,6 @@ def healthcheck():
 if __name__ == '__main__':
     # Startup
     logger.info("Starting server", version=__version__)
+    check_default_env_vars()
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
