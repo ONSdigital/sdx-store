@@ -41,7 +41,7 @@ def check_default_env_vars():
 
     for i in env_vars:
         if os.getenv(i) is None:
-            logger.error("No ", i, "env var supplied")
+            logger.error("Required env var missing", missing_env_var=i)
             missing_env_var = True
 
     if missing_env_var is True:
