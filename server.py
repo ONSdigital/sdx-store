@@ -93,10 +93,12 @@ def _get_value(key):
 
 
 def check_default_env_vars():
-    env_vars = ["RABBIT_CS_QUEUE", "RABBIT_CTP_QUEUE", "RABBIT_CORA_QUEUE",
-                "RABBITMQ_HOST", "RABBITMQ_PORT", "RABBITMQ_DEFAULT_USER",
-                "RABBITMQ_DEFAULT_PASS", "RABBITMQ_DEFAULT_VHOST",
-                "RABBITMQ_HOST2", "RABBITMQ_PORT2",
+    env_vars = ["SDX_STORE_RABBIT_CS_QUEUE", "SDX_STORE_RABBIT_CTP_QUEUE",
+                "SDX_STORE_RABBIT_CORA_QUEUE", "SDX_STORE_RABBITMQ_HOST",
+                "SDX_STORE_RABBITMQ_PORT", "SDX_STORE_RABBITMQ_DEFAULT_USER",
+                "SDX_STORE_RABBITMQ_DEFAULT_PASS",
+                "SDX_STORE_RABBITMQ_DEFAULT_VHOST", "SDX_STORE_RABBITMQ_HOST2",
+                "SDX_STORE_RABBITMQ_PORT2",
                 ]
 
     missing = False

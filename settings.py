@@ -15,25 +15,25 @@ DB_URI = 'postgresql://{}:{}@{}:{}/{}'.format(DB_USER,
                                               DB_PORT,
                                               DB_NAME)
 
-RABBIT_CS_QUEUE = os.getenv('RABBIT_CS_QUEUE')
-RABBIT_CTP_QUEUE = os.getenv('RABBIT_CTP_QUEUE')
-RABBIT_CORA_QUEUE = os.getenv('RABBIT_CORA_QUEUE')
+RABBIT_CS_QUEUE = os.getenv('SDX_STORE_RABBIT_CS_QUEUE')
+RABBIT_CTP_QUEUE = os.getenv('SDX_STORE_RABBIT_CTP_QUEUE')
+RABBIT_CORA_QUEUE = os.getenv('SDX_STORE_RABBIT_CORA_QUEUE')
 
 
 RABBIT_URL = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
-    hostname=os.getenv('RABBITMQ_HOST'),
-    port=os.getenv('RABBITMQ_PORT'),
-    user=os.getenv('RABBITMQ_DEFAULT_USER'),
-    password=os.getenv('RABBITMQ_DEFAULT_PASS'),
-    vhost=os.getenv('RABBITMQ_DEFAULT_VHOST')
+    hostname=os.getenv('SDX_STORE_RABBITMQ_HOST'),
+    port=os.getenv('SDX_STORE_RABBITMQ_PORT'),
+    user=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_USER'),
+    password=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_PASS'),
+    vhost=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_VHOST')
 )
 
 RABBIT_URL2 = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
-    hostname=os.getenv('RABBITMQ_HOST2'),
-    port=os.getenv('RABBITMQ_PORT2'),
-    user=os.getenv('RABBITMQ_DEFAULT_USER'),
-    password=os.getenv('RABBITMQ_DEFAULT_PASS'),
-    vhost=os.getenv('RABBITMQ_DEFAULT_VHOST')
+    hostname=os.getenv('SDX_STORE_RABBITMQ_HOST2'),
+    port=os.getenv('SDX_STORE_RABBITMQ_PORT2'),
+    user=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_USER'),
+    password=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_PASS'),
+    vhost=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_VHOST')
 )
 
 RABBIT_URLS = [RABBIT_URL, RABBIT_URL2]
