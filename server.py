@@ -1,36 +1,89 @@
-import settings
+from datetime import datetime
+import json
 import logging
 import logging.handlers
-from flask import Flask, request, jsonify, Response
-import json
-from pymongo import MongoClient
-import pymongo.errors
-from datetime import datetime
-from voluptuous import Schema, Coerce, All, Range, MultipleInvalid
-from bson.objectid import ObjectId
-from bson.errors import InvalidId
-from structlog import wrap_logger
-from queue_publisher import Publisher
 import os
 import sys
+
+from flask import jsonify, Flask, Response, request
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect, select
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.exc import SQLAlchemyError
+from structlog import wrap_logger
+from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
+from werkzeug.exceptions import BadRequest
+
+from queue_publisher import Publisher
+import settings
 
 __version__ = "1.4.1"
 
 logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
 logger = wrap_logger(logging.getLogger(__name__))
-app = Flask(__name__)
-app.config['MONGODB_URL'] = settings.MONGODB_URL
+
 publisher = Publisher(logger)
 
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = settings.DB_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
+
+db = SQLAlchemy(app=app)
+
 schema = Schema({
-    'survey_id': str,
-    'form': str,
-    'ru_ref': str,
-    'period': str,
     'added_ms': Coerce(int),
+    'form': str,
+    'page': All(Coerce(int), Range(min=1)),
+    'period': str,
     'per_page': All(Coerce(int), Range(min=1, max=100)),
-    'page': All(Coerce(int), Range(min=1))
+    'ru_ref': str,
+    'survey_id': str,
 })
+
+
+class InvalidUsageError(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
+
+class SurveyResponse(db.Model):
+    __tablename__ = 'responses'
+    tx_id = db.Column("tx_id",
+                      UUID,
+                      primary_key=True)
+
+    ts = db.Column("ts",
+                   db.TIMESTAMP(timezone=True),
+                   server_default=db.func.now(),
+                   onupdate=db.func.now())
+
+    invalid = db.Column("invalid",
+                        db.Boolean,
+                        default=False)
+
+    data = db.Column("data", JSONB)
+
+    def __init__(self, tx_id, invalid, data):
+        self.tx_id = tx_id
+        self.invalid = invalid
+        self.data = data
+
+    def __repr__(self):
+        return '<SurveyResponse {}>'.format(self.tx_id)
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 def _get_value(key):
@@ -40,64 +93,60 @@ def _get_value(key):
 
 
 def check_default_env_vars():
+    env_vars = ["RABBIT_CS_QUEUE", "RABBIT_CTP_QUEUE", "RABBIT_CORA_QUEUE",
+                "RABBITMQ_HOST", "RABBITMQ_PORT", "RABBITMQ_DEFAULT_USER",
+                "RABBITMQ_DEFAULT_PASS", "RABBITMQ_DEFAULT_VHOST",
+                "RABBITMQ_HOST2", "RABBITMQ_PORT2",
+                ]
 
-    env_vars = ["MONGODB_URL", "RABBIT_CS_QUEUE", "RABBIT_CTP_QUEUE", "RABBIT_CORA_QUEUE",
-                "RABBITMQ_HOST", "RABBITMQ_PORT", "RABBITMQ_DEFAULT_USER", "RABBITMQ_DEFAULT_PASS",
-                "RABBITMQ_DEFAULT_VHOST", "RABBITMQ_HOST2", "RABBITMQ_PORT2"]
-
+    missing = False
     for i in env_vars:
         try:
             _get_value(i)
         except ValueError as e:
             logger.error("Unable to start service", error=e)
-            missing_env_var = True
+            missing = True
 
-    if missing_env_var is True:
+    if missing is True:
         sys.exit(1)
 
 
-def get_db_responses(invalid_flag=False):
-    mongo_client = MongoClient(app.config['MONGODB_URL'])
-    if invalid_flag:
-        return mongo_client.sdx_store.invalid_responses
-
-    return mongo_client.sdx_store.responses
+def create_tables():
+    logger.info("Creating tables")
+    db.create_all()
 
 
-@app.errorhandler(400)
-def errorhandler_400(e):
-    return client_error(repr(e))
+def get_responses(tx_id=None, invalid=None):
+    try:
+        schema(request.args)
+    except MultipleInvalid:
+        raise InvalidUsageError("Request args failed schema validation",
+                                status_code=400,
+                                payload=request.args)
 
+    page = request.args.get('page')
+    per_page = request.args.get('per_page')
 
-def client_error(error=None):
-    logger.error(error, status=400)
-    message = {
-        'status': 400,
-        'message': error,
-        'uri': request.url
-    }
-    resp = jsonify(message)
-    resp.status_code = 400
+    if not page:
+        page = 1
+    else:
+        page = int(page)
+    if not per_page:
+        per_page = 100
+    else:
+        per_page = int(per_page)
 
-    return resp
+    kwargs = {k: v for k, v in {'tx_id': tx_id, 'invalid': invalid}.items() if v is not None}
 
-
-@app.errorhandler(500)
-def errorhandler_500(e):
-    return server_error(repr(e))
-
-
-@app.errorhandler(500)
-def server_error(error=None):
-    logger.error(error, status=500)
-    message = {
-        'status': 500,
-        'message': error
-    }
-    resp = jsonify(message)
-    resp.status_code = 500
-
-    return resp
+    try:
+        r = SurveyResponse.query.filter_by(**kwargs).paginate(page, per_page)
+        logger.info("Retrieved results from db", tx_id=tx_id, invalid=invalid)
+        return r
+    except SQLAlchemyError as e:
+        logger.error("Could not retrieve results from db",
+                     tx_id=tx_id,
+                     invalid=invalid,
+                     error=e)
 
 
 def json_serial(obj):
@@ -108,167 +157,168 @@ def json_serial(obj):
 
 
 def json_response(content):
-    output = json.dumps(content, default=json_serial)
+    output = json.dumps(object_as_dict(content), default=json_serial)
     return Response(output, mimetype='application/json')
 
 
+def object_as_dict(obj):
+    return {c.key: getattr(obj, c.key)
+            for c in inspect(obj).mapper.column_attrs}
+
+
 def save_response(bound_logger, survey_response):
-    doc = {}
-    doc['survey_response'] = survey_response
-    doc['added_date'] = datetime.utcnow()
-
-    invalid_flag = False
-
-    if 'invalid' in survey_response:
-        invalid_flag = survey_response['invalid']
+    invalid = survey_response.get("invalid")
 
     try:
-        result = get_db_responses(invalid_flag).insert_one(doc)
-        bound_logger.info("Response saved", inserted_id=result.inserted_id, invalid=invalid_flag)
-        return str(result.inserted_id), invalid_flag
+        tx_id = survey_response["tx_id"]
+    except KeyError:
+        raise InvalidUsageError("Missing transaction id. Unable to save response",
+                                400)
+    else:
+        response = SurveyResponse(tx_id=tx_id,
+                                  invalid=invalid,
+                                  data=survey_response)
+        try:
+            db.session.add(response)
+            db.session.commit()
+        except SQLAlchemyError:
+            raise server_error("Unable to save response")
+        else:
+            bound_logger.info("Response saved",
+                              invalid=invalid)
+        return invalid
 
-    except pymongo.errors.OperationFailure as e:
-        bound_logger.error("Failed to store survey response", exception=str(e))
-        return None, False
+
+def test_sql(connection):
+    """Run a SELECT 1 to test the database connection"""
+    logger.debug("Executing select 1")
+    connection.scalar(select([1]))
+
+
+@app.errorhandler(500)
+def server_error(error=None):
+    logger.error(error, status=500)
+    message = {
+        'status': 500,
+        'message': error,
+    }
+
+    resp = jsonify(message)
+    resp.status_code = 500
+    return resp
+
+
+@app.errorhandler(InvalidUsageError)
+def invalid_usage_error(error=None):
+    logger.error(error.message, status=400, payload=error.payload)
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
 
 
 @app.route('/responses', methods=['POST'])
 def do_save_response():
-    survey_response = request.get_json(force=True)
+    try:
+        survey_response = request.get_json(force=True)
+    except BadRequest:
+        raise InvalidUsageError("Invalid POST request to /response",
+                                status_code=400,
+                                payload=request.args)
+
     metadata = survey_response['metadata']
-    bound_logger = logger.bind(user_id=metadata['user_id'], ru_ref=metadata['ru_ref'], tx_id=survey_response['tx_id'])
 
-    inserted_id, invalid_flag = save_response(bound_logger, survey_response)
-    if inserted_id is None:
-        return server_error("Unable to save response")
+    bound_logger = logger.bind(user_id=metadata['user_id'],
+                               ru_ref=metadata['ru_ref'],
+                               tx_id=survey_response['tx_id'])
 
-    if invalid_flag is True:
+    publisher.logger = bound_logger
+
+    invalid = save_response(bound_logger, survey_response)
+
+    if invalid is True:
         return jsonify(result="false")
 
-    if survey_response['survey_id'] == 'census':
-        queued = publisher.ctp.publish_message(inserted_id)
-    elif survey_response['survey_id'] == '144':
-        queued = publisher.cora.publish_message(inserted_id)
-    else:
-        queued = publisher.cs.publish_message(inserted_id)
+    tx_id = survey_response['tx_id']
 
-    if queued is False:
+    if survey_response['survey_id'] == 'census':
+        queued = publisher.ctp.publish_message(tx_id)
+    elif survey_response['survey_id'] == '144':
+        queued = publisher.cora.publish_message(tx_id)
+    else:
+        queued = publisher.cs.publish_message(tx_id)
+
+    if not queued:
         return server_error("Unable to queue notification")
 
+    publisher.logger = logger
     return jsonify(result="ok")
-
-
-def fetch_responses(invalid=False):
-    try:
-        schema(request.args)
-    except MultipleInvalid as e:
-        logger.error("Request args failed schema validation", error=str(e))
-        return client_error(repr(e))
-
-    if invalid:
-        invalid = True
-
-    survey_id = request.args.get('survey_id')
-    form = request.args.get('form')
-    ru_ref = request.args.get('ru_ref')
-    period = request.args.get('period')
-    added_ms = request.args.get('added_ms')
-    page = request.args.get('page')
-    per_page = request.args.get('per_page')
-
-    # paging defaults
-    if not page:
-        page = 1
-    else:
-        page = int(page)
-    if not per_page:
-        per_page = 100
-    else:
-        per_page = int(per_page)
-
-    search_criteria = {}
-    if survey_id:
-        search_criteria['survey_response.survey_id'] = survey_id
-    if form:
-        search_criteria['survey_response.form'] = form
-    if ru_ref:
-        search_criteria['survey_response.metadata.ru_ref'] = ru_ref
-    if period:
-        search_criteria['survey_response.collection.period'] = period
-    if added_ms:
-        search_criteria['added_date'] = {
-            "$gte": datetime.fromtimestamp(int(added_ms) / 1000.0)
-        }
-
-    results = {}
-    responses = []
-    db_responses = get_db_responses(invalid_flag=invalid)
-    count = db_responses.find(search_criteria).count()
-    results['total_hits'] = count
-    cursor = db_responses.find(search_criteria).skip(per_page * (page - 1)).limit(per_page)
-    for document in cursor:
-        document['_id'] = str(document['_id'])
-        if added_ms:
-            document['added_ms'] = int(document['added_date'].strftime("%s")) * 1000
-        responses.append(document)
-
-    results['results'] = responses
-    return json_response(results)
 
 
 @app.route('/invalid-responses', methods=['GET'])
 def do_get_invalid_responses():
-    return fetch_responses(True)
+    responses = get_responses(invalid=True)
+
+    if responses:
+        jsonify(responses)
+    else:
+        return jsonify({}), 404
 
 
 @app.route('/responses', methods=['GET'])
 def do_get_responses():
-    return fetch_responses(False)
+    page = get_responses(invalid=False)
 
-
-@app.route('/responses/<mongo_id>', methods=['GET'])
-def do_get_response(mongo_id):
     try:
-        result = get_db_responses().find_one({"_id": ObjectId(mongo_id)})
-        if result:
-            result['_id'] = str(result['_id'])
-            return json_response(result)
+        return jsonify([item.to_dict() for item in page.items])
+    except AttributeError as e:
+        logger.error("No items in page", error=e)
+        return jsonify({}), 404
 
-    except InvalidId as e:
-        return client_error(repr(e))
 
-    except Exception as e:
-        return server_error(repr(e))
-
-    return jsonify({}), 404
+@app.route('/responses/<tx_id>', methods=['GET'])
+def do_get_response(tx_id):
+    result = get_responses(tx_id=tx_id)
+    if result:
+        r = [object_as_dict(r) for r in result.items]
+        return jsonify(r)
+    else:
+        return jsonify({}), 404
 
 
 @app.route('/queue', methods=['POST'])
 def do_queue():
-    mongo_id = request.get_json(force=True)['id']
+    tx_id = request.get_json(force=True)['id']
     # check document exists with id
-    result = do_get_response(mongo_id)
+    result = do_get_response(tx_id)
     if result.status_code != 200:
         return result
 
     response = json.loads(result.response[0].decode('utf-8'))
 
     if response['survey_response']['survey_id'] == 'census':
-        queued = publisher.ctp.publish_message(mongo_id)
+        queued = publisher.ctp.publish_message(tx_id)
     elif response['survey_response']['survey_id'] == '144':
-        queued = publisher.cora.publish_message(mongo_id)
+        queued = publisher.cora.publish_message(tx_id)
     else:
-        queued = publisher.cs.publish_message(mongo_id)
+        queued = publisher.cs.publish_message(tx_id)
 
-    if queued is False:
-        return server_error("Unable to queue notification")
+    if not queued:
+        return server_error("Unable to queue response")
 
     return jsonify(result="ok")
 
 
 @app.route('/healthcheck', methods=['GET'])
 def healthcheck():
-    return jsonify({'status': 'OK'})
+    try:
+        logger.info("Checking database connection")
+        conn = db.engine.connect()
+        test_sql(conn)
+    except SQLAlchemyError:
+        logger.error("Failed to connect to database")
+        return server_error(500)
+    else:
+        return jsonify({'status': 'OK'})
 
 
 if __name__ == '__main__':

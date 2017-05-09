@@ -2,21 +2,19 @@
 
 [![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store)
 
-Scalable service for storing SDX data (backed by MongoDB).
+Scalable service for storing SDX data (backed by PostgreSQL).
 
 ## Prerequisites
 
-A running instance of MongoDB. The service connects to `mongodb://localhost:27017` by default.
-
-To override this export a `MONGODB_URL` environment variable.
+A running instance of PostgreSQL.
 
 ## Installation
 
-Using virtualenv and pip, create a new environment and install within using:
+Using virtualenv, create a new environment, then install dependencies using:
 
-    $ pip install -r requirements.txt
+    $ make build
 
-It's also possible to install within a container using docker. From the sdx-sequence directory:
+It's also possible to install within a container using docker. From the sdx-store directory:
 
     $ docker build -t sdx-store .
 
@@ -24,41 +22,24 @@ It's also possible to install within a container using docker. From the sdx-sequ
 
 Start the sdx-store service using the following command:
 
-    python server.py
+    make start
 
 ## API
 
-There are four endpoints:
+There are six endpoints:
+ * `GET /invalid-responses` - returns a json response of all invalid survey responses in the connected database
+ * `POST /queue` - Publishes a message to a corresponding rabbit message queue based on the message content. Returns a 200 response and JSON value `{"result": "ok"}` if the publish succeeds or a 500 response with JSON value `{"status": 500, "message": <error>}` if it does not.
  * `GET /healthcheck` - returns a json response with key/value pairs describing the service state
  * `POST /responses` - store a json survey response
- * `GET /responses` - retrieve a set of survey responses matching the query parameters
- * `GET /responses/<mongo_id>` - retrieve a survey by id
+ * `GET /responses` - retrieve a JSON response of all valid survey responses in the connected responses.
+ * `GET /responses/<tx_id>` - retrieve a survey by id
 
-### Query parameters
+### Query Parameters
 
-The query parameters for `GET /responses` match the identifying data in the Json:
- * `survey_id`
- * `form`
- * `ru_ref`
- * `period`
- * `added_ms` - see below.
+The `/responses` and `/invalid-responses` endpoints support paging using URL query parameters.
 
- These parameters do not all need to be provided, so you can choose how to select the survey responses you would like to receive.
-
-### Query response
-
-The response to `GET /responses` will contain a `total_hits` field, indicating the total number
-of matched survey responses. This may be higher than the number returned, which is currently capped at 100.
-
-The response also contains a field called `results`, which contains an array of result objects.
-
-A result object consists of three fields:
- * `survey_response` contains the Json which was originally stored.
- * `added_date` contains a readable date for when the survey response was added to the store.
- * `added_ms` contains a millisecond timestamp of the date for when the survey response was added to the store.
-
-The `added_ms` value can be used in queries to filter to only return results on or after the given timestamp.
-This is intended to be used for paging and batching of result.
+* `per_page`: The number of responses to return per page. Must be in the range 1-100. Defaults to 1.
+* `page`: The page number to return. Must be 1 or higher if set. Defaults to 1.
 
 ## Configuration
 
