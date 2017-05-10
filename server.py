@@ -281,7 +281,7 @@ def do_get_responses():
 def do_get_response(tx_id):
     result = get_responses(tx_id=tx_id)
     if result:
-        r = [object_as_dict(r) for r in result.items]
+        r = object_as_dict(result.items[0])
         return jsonify(r)
     else:
         return jsonify({}), 404
