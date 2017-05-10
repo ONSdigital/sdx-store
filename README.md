@@ -58,3 +58,10 @@ Some of important environment variables available for configuration are listed b
 | RABBITMQ_DEFAULT_VHOST  | `%2f`                                 | RabbitMQ virtual host
 | RABBITMQ_HOST2          | `rabbit`                              | RabbitMQ name
 | RABBITMQ_PORT2          | `rabbit`                              | RabbitMQ port
+
+
+### License
+
+Copyright © 2016, Office for National Statistics (https://www.ons.gov.uk)
+
+Released under MIT license, see [LICENSE](LICENSE) for details.
