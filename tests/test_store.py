@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import unittest
 
 import mock
@@ -10,6 +9,7 @@ import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
 
+"""
 os.environ['SDX_STORE_POSTGRES_HOST'] = '0.0.0.0'
 os.environ['SDX_STORE_POSTGRES_PORT'] = '5432'
 os.environ['SDX_STORE_POSTGRES_NAME'] = 'postgres'
@@ -25,6 +25,7 @@ os.environ['SDX_STORE_RABBITMQ_PORT2'] = '5433'
 os.environ['SDX_STORE_RABBIT_CORA_QUEUE'] = 'sdx-cora-survey-notifications'
 os.environ['SDX_STORE_RABBIT_CTP_QUEUE'] = 'sdx-ctp-survey-notifications'
 os.environ['SDX_STORE_RABBIT_CS_QUEUE'] = 'sdx-cs-survey-notifications'
+"""
 
 import server
 from server import db, InvalidUsageError, logger
@@ -54,7 +55,6 @@ class TestStoreService(unittest.TestCase):
         self.postgres = Postgresql()
         self.app = server.app.test_client()
         self.app.testing = True
-        server.check_default_env_vars()
         server.create_tables()
 
     def tearDown(self):
