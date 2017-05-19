@@ -27,6 +27,7 @@ publisher = Publisher(logger)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = settings.DB_URI
+logger.debug(app.config['SQLALCHEMY_DATABASE_URI'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
 db = SQLAlchemy(app=app)
@@ -336,6 +337,5 @@ def healthcheck():
 if __name__ == '__main__':
     # Startup
     logger.info("Starting server", version=__version__)
-    check_default_env_vars()
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)

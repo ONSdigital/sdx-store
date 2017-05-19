@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import unittest
 
 import mock
@@ -38,7 +37,6 @@ class TestStoreService(unittest.TestCase):
         self.postgres = Postgresql()
         self.app = server.app.test_client()
         self.app.testing = True
-        server.check_default_env_vars()
         server.create_tables()
 
     def tearDown(self):
