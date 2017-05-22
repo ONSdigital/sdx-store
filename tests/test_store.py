@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import unittest
 
 import mock
@@ -9,22 +8,6 @@ from sqlalchemy.exc import SQLAlchemyError
 import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
-
-os.environ['SDX_STORE_POSTGRES_HOST'] = '0.0.0.0'
-os.environ['SDX_STORE_POSTGRES_PORT'] = '5432'
-os.environ['SDX_STORE_POSTGRES_NAME'] = 'postgres'
-os.environ['SDX_STORE_POSTGRES_USER'] = 'postgres'
-os.environ['SDX_STORE_POSTGRES_PASSWORD'] = 'secret'
-os.environ['SDX_STORE_RABBITMQ_HOST'] = 'rabbit'
-os.environ['SDX_STORE_RABBITMQ_PORT'] = '5672'
-os.environ['SDX_STORE_RABBITMQ_DEFAULT_USER'] = 'rabbit'
-os.environ['SDX_STORE_RABBITMQ_DEFAULT_PASS'] = 'rabbit'
-os.environ['SDX_STORE_RABBITMQ_DEFAULT_VHOST'] = '2%f'
-os.environ['SDX_STORE_RABBITMQ_HOST2'] = '0.0.0.0'
-os.environ['SDX_STORE_RABBITMQ_PORT2'] = '5433'
-os.environ['SDX_STORE_RABBIT_CORA_QUEUE'] = 'sdx-cora-survey-notifications'
-os.environ['SDX_STORE_RABBIT_CTP_QUEUE'] = 'sdx-ctp-survey-notifications'
-os.environ['SDX_STORE_RABBIT_CS_QUEUE'] = 'sdx-cs-survey-notifications'
 
 import server
 from server import db, InvalidUsageError, logger
@@ -54,17 +37,12 @@ class TestStoreService(unittest.TestCase):
         self.postgres = Postgresql()
         self.app = server.app.test_client()
         self.app.testing = True
-        server.check_default_env_vars()
         server.create_tables()
 
     def tearDown(self):
         db.session.remove()
         db.drop_all()
         self.postgres.stop()
-
-    def test_missing_envvar_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            server._get_value('TEST')
 
     # /responses POST
     def test_empty_post_request(self):
@@ -80,7 +58,8 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(True, invalid)
 
     def test_response_not_saved_returns_500(self):
-        with mock.patch('server.save_response', return_value=(None, False)):
+        with mock.patch('server.db.session.commit') as db_mock:
+            db_mock.side_effect = SQLAlchemyError
             r = self.app.post(self.endpoints['responses'], data=test_message)
             self.assertEqual(500, r.status_code)
 
