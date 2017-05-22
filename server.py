@@ -186,7 +186,7 @@ def save_response(bound_logger, survey_response):
             db.session.commit()
         except SQLAlchemyError as e:
             bound_logger.info("Unable to save response", error=e)
-            return server_error("Returning 500 - unable to save response to database")
+            raise SQLAlchemyError
         else:
             bound_logger.info("Response saved",
                               invalid=invalid)
