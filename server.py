@@ -3,6 +3,7 @@ import json
 import logging
 import logging.handlers
 import os
+import sys
 
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
@@ -27,7 +28,6 @@ publisher = Publisher(logger)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = settings.DB_URI
-logger.debug(app.config['SQLALCHEMY_DATABASE_URI'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
 db = SQLAlchemy(app=app)
@@ -174,12 +174,6 @@ def save_response(bound_logger, survey_response):
 
     merge(response)
     return invalid
-
-
-def test_sql(connection):
-    """Run a SELECT 1 to test the database connection"""
-    logger.debug("Executing select 1")
-    connection.scalar(select([1]))
 
 
 def test_sql(connection):
@@ -337,5 +331,6 @@ def healthcheck():
 if __name__ == '__main__':
     # Startup
     logger.info("Starting server", version=__version__)
+    check_default_env_vars()
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
