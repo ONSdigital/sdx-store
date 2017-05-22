@@ -3,7 +3,6 @@ import json
 import logging
 import logging.handlers
 import os
-import sys
 
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
@@ -84,33 +83,6 @@ class SurveyResponse(db.Model):
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-
-
-def _get_value(key):
-    value = os.getenv(key)
-    if not value:
-        raise ValueError("No value set for " + key)
-
-
-def check_default_env_vars():
-    env_vars = ["SDX_STORE_RABBIT_CS_QUEUE", "SDX_STORE_RABBIT_CTP_QUEUE",
-                "SDX_STORE_RABBIT_CORA_QUEUE", "SDX_STORE_RABBITMQ_HOST",
-                "SDX_STORE_RABBITMQ_PORT", "SDX_STORE_RABBITMQ_DEFAULT_USER",
-                "SDX_STORE_RABBITMQ_DEFAULT_PASS",
-                "SDX_STORE_RABBITMQ_DEFAULT_VHOST", "SDX_STORE_RABBITMQ_HOST2",
-                "SDX_STORE_RABBITMQ_PORT2",
-                ]
-
-    missing = False
-    for i in env_vars:
-        try:
-            _get_value(i)
-        except ValueError as e:
-            logger.error("Unable to start service", error=e)
-            missing = True
-
-    if missing is True:
-        sys.exit(1)
 
 
 def create_tables():
@@ -239,7 +211,7 @@ def do_save_response():
 
     try:
         invalid = save_response(bound_logger, survey_response)
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         return server_error("Database error")
 
     if invalid is True:
@@ -331,6 +303,5 @@ def healthcheck():
 if __name__ == '__main__':
     # Startup
     logger.info("Starting server", version=__version__)
-    check_default_env_vars()
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
