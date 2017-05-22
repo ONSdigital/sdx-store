@@ -3,7 +3,6 @@ import json
 import logging
 import logging.handlers
 import os
-import sys
 
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
@@ -331,6 +330,5 @@ def healthcheck():
 if __name__ == '__main__':
     # Startup
     logger.info("Starting server", version=__version__)
-    check_default_env_vars()
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
