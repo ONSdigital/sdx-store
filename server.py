@@ -169,6 +169,7 @@ def object_as_dict(obj):
 
 
 def save_response(bound_logger, survey_response):
+    bound_logger.info("Saving response")
     invalid = survey_response.get("invalid")
 
     try:
