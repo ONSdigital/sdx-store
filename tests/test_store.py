@@ -9,24 +9,6 @@ import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
 
-"""
-os.environ['SDX_STORE_POSTGRES_HOST'] = '0.0.0.0'
-os.environ['SDX_STORE_POSTGRES_PORT'] = '5432'
-os.environ['SDX_STORE_POSTGRES_NAME'] = 'postgres'
-os.environ['SDX_STORE_POSTGRES_USER'] = 'postgres'
-os.environ['SDX_STORE_POSTGRES_PASSWORD'] = 'secret'
-os.environ['SDX_STORE_RABBITMQ_HOST'] = 'rabbit'
-os.environ['SDX_STORE_RABBITMQ_PORT'] = '5672'
-os.environ['SDX_STORE_RABBITMQ_DEFAULT_USER'] = 'rabbit'
-os.environ['SDX_STORE_RABBITMQ_DEFAULT_PASS'] = 'rabbit'
-os.environ['SDX_STORE_RABBITMQ_DEFAULT_VHOST'] = '2%f'
-os.environ['SDX_STORE_RABBITMQ_HOST2'] = '0.0.0.0'
-os.environ['SDX_STORE_RABBITMQ_PORT2'] = '5433'
-os.environ['SDX_STORE_RABBIT_CORA_QUEUE'] = 'sdx-cora-survey-notifications'
-os.environ['SDX_STORE_RABBIT_CTP_QUEUE'] = 'sdx-ctp-survey-notifications'
-os.environ['SDX_STORE_RABBIT_CS_QUEUE'] = 'sdx-cs-survey-notifications'
-"""
-
 import server
 from server import db, InvalidUsageError, logger
 
