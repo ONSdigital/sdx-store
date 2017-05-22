@@ -258,8 +258,12 @@ def do_get_responses():
 def do_get_response(tx_id):
     result = get_responses(tx_id=tx_id)
     if result:
-        r = object_as_dict(result.items[0])['data']
-        return jsonify(r)
+        try:
+            r = object_as_dict(result.items[0])['data']
+            return jsonify(r)
+        except IndexError as e:
+            logger.error('Empty items list in result.', error=e)
+            return jsonify({}), 404
     else:
         return jsonify({}), 404
 
