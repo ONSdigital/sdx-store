@@ -80,7 +80,8 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(True, invalid)
 
     def test_response_not_saved_returns_500(self):
-        with mock.patch('server.save_response', return_value=(None, False)):
+        with mock.patch('server.db.session.commit') as db_mock:
+            db_mock.side_effect = SQLAlchemyError
             r = self.app.post(self.endpoints['responses'], data=test_message)
             self.assertEqual(500, r.status_code)
 

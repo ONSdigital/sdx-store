@@ -3,6 +3,7 @@ import json
 import logging
 import logging.handlers
 import os
+import sys
 
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
@@ -25,7 +26,6 @@ publisher = Publisher(logger)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = settings.DB_URI
-logger.debug(app.config['SQLALCHEMY_DATABASE_URI'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
 db = SQLAlchemy(app=app)
@@ -90,6 +90,27 @@ def _get_value(key):
     value = os.getenv(key)
     if not value:
         raise ValueError("No value set for " + key)
+
+
+def check_default_env_vars():
+    env_vars = ["SDX_STORE_RABBIT_CS_QUEUE", "SDX_STORE_RABBIT_CTP_QUEUE",
+                "SDX_STORE_RABBIT_CORA_QUEUE", "SDX_STORE_RABBITMQ_HOST",
+                "SDX_STORE_RABBITMQ_PORT", "SDX_STORE_RABBITMQ_DEFAULT_USER",
+                "SDX_STORE_RABBITMQ_DEFAULT_PASS",
+                "SDX_STORE_RABBITMQ_DEFAULT_VHOST", "SDX_STORE_RABBITMQ_HOST2",
+                "SDX_STORE_RABBITMQ_PORT2",
+                ]
+
+    missing = False
+    for i in env_vars:
+        try:
+            _get_value(i)
+        except ValueError as e:
+            logger.error("Unable to start service", error=e)
+            missing = True
+
+    if missing is True:
+        sys.exit(1)
 
 
 def create_tables():
@@ -162,8 +183,9 @@ def save_response(bound_logger, survey_response):
         try:
             db.session.add(response)
             db.session.commit()
-        except SQLAlchemyError:
-            return server_error("Unable to save response")
+        except SQLAlchemyError as e:
+            bound_logger.info("Unable to save response", error=e)
+            return server_error("Returning 500 - unable to save response to database")
         else:
             bound_logger.info("Response saved",
                               invalid=invalid)
@@ -214,10 +236,13 @@ def do_save_response():
 
     publisher.logger = bound_logger
 
-    invalid = save_response(bound_logger, survey_response)
+    try:
+        invalid = save_response(bound_logger, survey_response)
+    except SQLAlchemyError as e:
+        return server_error("Database error")
 
     if invalid is True:
-        return jsonify(result="false")
+        return jsonify(invalid)
 
     tx_id = survey_response['tx_id']
 
@@ -305,5 +330,6 @@ def healthcheck():
 if __name__ == '__main__':
     # Startup
     logger.info("Starting server", version=__version__)
+    check_default_env_vars()
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
