@@ -44,10 +44,6 @@ class TestStoreService(unittest.TestCase):
         db.drop_all()
         self.postgres.stop()
 
-    def test_missing_envvar_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            server._get_value('TEST')
-
     # /responses POST
     def test_empty_post_request(self):
         r = self.app.post(self.endpoints['responses'])
