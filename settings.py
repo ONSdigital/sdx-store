@@ -21,7 +21,7 @@ RABBIT_URL = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
     port=os.getenv('SDX_STORE_RABBITMQ_PORT', '5672'),
     user=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_USER', 'rabbit'),
     password=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_PASS', 'rabbit'),
-    vhost=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_VHOST', '2%f')
+    vhost=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_VHOST', '%2f')
 )
 
 RABBIT_URL2 = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
@@ -29,7 +29,7 @@ RABBIT_URL2 = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
     port=os.getenv('SDX_STORE_RABBITMQ_PORT2', '5433'),
     user=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_USER', 'rabbit'),
     password=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_PASS', 'rabbit'),
-    vhost=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_VHOST', '2%f')
+    vhost=os.getenv('SDX_STORE_RABBITMQ_DEFAULT_VHOST', '%2f')
 )
 
 RABBIT_URLS = [RABBIT_URL, RABBIT_URL2]

@@ -4,7 +4,7 @@ import unittest
 
 import mock
 from structlog import wrap_logger
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
@@ -65,6 +65,15 @@ class TestStoreService(unittest.TestCase):
 
     def test_queue_fails_returns_500(self):
         with mock.patch('server.publisher.cs.publish_message', return_value=False):
+            r = self.app.post(self.endpoints['responses'], data=test_message)
+            self.assertEqual(500, r.status_code)
+
+        db.session.remove()
+        db.drop_all()
+
+    def test_integrity_error_returns_500(self):
+        with mock.patch('server.db.session.commit') as db_mock:
+            db_mock.side_effect = IntegrityError(None, None, None, None)
             r = self.app.post(self.endpoints['responses'], data=test_message)
             self.assertEqual(500, r.status_code)
 
