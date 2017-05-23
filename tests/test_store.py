@@ -4,7 +4,6 @@ import unittest
 
 import mock
 from structlog import wrap_logger
-
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
