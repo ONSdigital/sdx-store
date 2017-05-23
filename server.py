@@ -8,7 +8,7 @@ from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
@@ -135,6 +135,21 @@ def json_response(content):
     return Response(output, mimetype='application/json')
 
 
+def merge(response):
+    try:
+        db.session.merge(response)
+        db.session.commit()
+    except SQLAlchemyError as e:
+        logger.info("Unable to save response", error=e)
+        raise SQLAlchemyError
+    except IntegrityError as e:
+        logger.info("Integrity error in database. Rolling back commit",
+                    error=e)
+        raise IntegrityError
+    else:
+        logger.info("Response saved", tx_id=response.tx_id)
+
+
 def object_as_dict(obj):
     return {c.key: getattr(obj, c.key)
             for c in inspect(obj).mapper.column_attrs}
@@ -149,20 +164,13 @@ def save_response(bound_logger, survey_response):
     except KeyError:
         raise InvalidUsageError("Missing transaction id. Unable to save response",
                                 400)
-    else:
-        response = SurveyResponse(tx_id=tx_id,
-                                  invalid=invalid,
-                                  data=survey_response)
-        try:
-            db.session.add(response)
-            db.session.commit()
-        except SQLAlchemyError as e:
-            bound_logger.info("Unable to save response", error=e)
-            raise SQLAlchemyError
-        else:
-            bound_logger.info("Response saved",
-                              invalid=invalid)
-        return invalid
+
+    response = SurveyResponse(tx_id=tx_id,
+                              invalid=invalid,
+                              data=survey_response)
+
+    merge(response)
+    return invalid
 
 
 def test_sql(connection):
@@ -213,6 +221,8 @@ def do_save_response():
         invalid = save_response(bound_logger, survey_response)
     except SQLAlchemyError:
         return server_error("Database error")
+    except IntegrityError:
+        return server_error("Integrity error")
 
     if invalid is True:
         return jsonify(invalid)
