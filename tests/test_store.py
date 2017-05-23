@@ -72,11 +72,8 @@ class TestStoreService(unittest.TestCase):
         db.drop_all()
 
     def test_integrity_error_returns_500(self):
-        def raise_integrity_error():
-            raise IntegrityError('Mock', 'mock', 'mock')
-
         with mock.patch('server.db.session.commit') as db_mock:
-            db_mock.side_effect = raise_integrity_error()
+            db_mock.side_effect = IntegrityError(None, None, None, None)
             r = self.app.post(self.endpoints['responses'], data=test_message)
             self.assertEqual(500, r.status_code)
 
