@@ -1,4 +1,5 @@
 ### Unreleased
+  - Support UPDATE statements for duplicated tx_ids
   - Use Postgres backend via SQLAlchemy ORM.
   - Persist QueuePublishers
   - Add environment variables to README
