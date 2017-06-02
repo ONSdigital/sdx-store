@@ -1,6 +1,6 @@
 # sdx-store
 
-[![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store)
+[![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b012a2cfe7214e079b80d279def1bba2)](https://www.codacy.com/app/ons-sdc/sdx-store?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ONSdigital/sdx-store&amp;utm_campaign=Badge_Grade)
 
 Scalable service for storing SDX data (backed by PostgreSQL).
 
