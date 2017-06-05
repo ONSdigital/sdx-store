@@ -5,6 +5,7 @@
   - Add environment variables to README
   - Remove environment variable defaults
   - Correct license attribution
+  - Add codacy badge
 
 ### 1.4.1 2017-03-15
   - Log version number on startup
