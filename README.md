@@ -12,7 +12,21 @@ A running instance of PostgreSQL.
 
 Using virtualenv, create a new environment, then install dependencies using:
 
-    $ make build
+```bash
+make build
+```
+
+To install using local sdx-common repo (requires SDX_HOME environment variable), use:
+
+```bash
+make dev
+```
+
+To run the test suite, use:
+
+```bash
+make test
+```
 
 It's also possible to install within a container using docker. From the sdx-store directory:
 
