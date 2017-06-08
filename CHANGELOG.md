@@ -1,4 +1,6 @@
 ### Unreleased
+  - Timestamp all logs as UTC
+  - Add common library logging configurator
   - Support UPDATE statements for duplicated tx_ids
   - Use Postgres backend via SQLAlchemy ORM.
   - Persist QueuePublishers
