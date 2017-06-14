@@ -20,7 +20,7 @@ import settings
 
 __version__ = "1.5.0"
 
-logger_initial_config(service_name='sdx-store', log_level=settings.LOGGING_LEVEL)
+logger_initial_config(service_name='sdx-store')
 logger = wrap_logger(logging.getLogger(__name__))
 
 publisher = Publisher(logger)
