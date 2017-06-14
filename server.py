@@ -6,6 +6,7 @@ import os
 
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
+from sdx.common.logger_config import logger_initial_config
 from sqlalchemy import inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -16,9 +17,10 @@ from werkzeug.exceptions import BadRequest
 from queue_publisher import Publisher
 import settings
 
+
 __version__ = "1.4.1"
 
-logging.basicConfig(level=settings.LOGGING_LEVEL, format=settings.LOGGING_FORMAT)
+logger_initial_config(service_name='sdx-store')
 logger = wrap_logger(logging.getLogger(__name__))
 
 publisher = Publisher(logger)
