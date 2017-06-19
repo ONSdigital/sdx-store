@@ -8,6 +8,7 @@
   - Remove environment variable defaults
   - Correct license attribution
   - Add codacy badge
+  - Add support for codecov to see unit test coverage
 
 ### 1.5.0 2017-07-10
   - Timestamp all logs as UTC
