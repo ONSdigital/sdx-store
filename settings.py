@@ -1,7 +1,7 @@
 import os
 import logging
 
-LOGGING_FORMAT = "%(asctime)s|%(levelname)s: sdx-store: %(message)s"
+
 LOGGING_LEVEL = logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
 DB_HOST = os.getenv('SDX_STORE_POSTGRES_HOST', '0.0.0.0')
