@@ -1,0 +1,4 @@
+---
+applications:
+- name: sdx-store
+  memory: 512M
