@@ -2,3 +2,8 @@
 applications:
 - name: sdx-store
   memory: 512M
+  instances: 1
+  memory: 512M
+  services:
+    - sdx-rabbitmq
+    - sdx-psql
