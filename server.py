@@ -7,6 +7,7 @@ import os
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
 from sdx.common.logger_config import logger_initial_config
+from sdx.common.log_levels import set_level
 from sqlalchemy import inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -19,6 +20,8 @@ import settings
 
 
 __version__ = "1.4.1"
+
+set_level(logger='pika', log_level='ERROR')
 
 logger_initial_config(service_name='sdx-store', log_level=settings.LOGGING_LEVEL)
 logger = wrap_logger(logging.getLogger(__name__))
@@ -200,6 +203,16 @@ def invalid_usage_error(error=None):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
+
+
+@app.route('/create-tables', methods=['GET'])
+def do_create_tables():
+    try:
+        create_tables()
+        return jsonify(result="ok")
+    except Exception as e:
+        logger.error('Could not create tables in PSQL', error=e)
+        return server_error(error=e)
 
 
 @app.route('/responses', methods=['POST'])
