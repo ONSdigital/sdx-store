@@ -1,6 +1,6 @@
 # sdx-store
 
-[![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/e482887a39f7445a8f960c8dda3c045a)](https://www.codacy.com/app/ons-sdc/sdx-store?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ONSdigital/sdx-store&amp;utm_campaign=Badge_Grade)
+[![Build Status](https://travis-ci.org/ONSdigital/sdx-store.svg?branch=master)](https://travis-ci.org/ONSdigital/sdx-store) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/e482887a39f7445a8f960c8dda3c045a)](https://www.codacy.com/app/ons-sdc/sdx-store?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ONSdigital/sdx-store&amp;utm_campaign=Badge_Grade) [![codecov](https://codecov.io/gh/ONSdigital/sdx-store/branch/master/graph/badge.svg)](https://codecov.io/gh/ONSdigital/sdx-store)
 
 Scalable service for storing SDX data (backed by PostgreSQL).
 

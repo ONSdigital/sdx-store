@@ -8,13 +8,17 @@ before_install:
     - pip3 install ./sdx-common
 install:
     - make build
+    - pip install codecov
 before_script:
     - psql -c 'create database test;' -U postgres
     - psql -c "grant all privileges on database test to postgres;" -U postgres
 script:
     - make test
+    - coverage run -m unittest tests/*.py
 services:
     - postgresql
 dist: trusty
+after_success:
+    - codecov
 addons:
   postgresql: "9.6"
