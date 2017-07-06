@@ -9,6 +9,7 @@
   - Correct license attribution
   - Add codacy badge
   - Add support for codecov to see unit test coverage
+  - Update and pin version of sdx-common to 0.7.0
 
 ### 1.5.0 2017-07-10
   - Timestamp all logs as UTC
