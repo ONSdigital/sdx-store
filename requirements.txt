@@ -4,5 +4,5 @@ gunicorn==19.6.0
 pika==0.10.0
 psycopg2==2.7.1
 structlog==16.1.0
-sdx-common>=0.5.1
+sdx-common==0.7.0
 voluptuous==0.9.3
