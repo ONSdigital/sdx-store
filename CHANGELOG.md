@@ -9,6 +9,7 @@
   - Correct license attribution
   - Add codacy badge
   - Add support for codecov to see unit test coverage
+  - Update and pin version of sdx-common to 0.7.0
 
 ### 1.4.1 2017-03-15
   - Log version number on startup
