@@ -293,15 +293,24 @@ def do_queue():
         return result
 
     response = json.loads(result.response[0].decode('utf-8'))
-    logger.info(
-        "About to publish message to the queue",
-        tx_id=tx_id,
-    )
+
     if response['survey_response']['survey_id'] == 'census':
+        logger.info(
+            "About to publish message to ctp queue",
+            tx_id=tx_id,
+        )
         queued = publisher.ctp.publish_message(tx_id)
     elif response['survey_response']['survey_id'] == '144':
+        logger.info(
+            "About to publish message to cora queue",
+            tx_id=tx_id,
+        )
         queued = publisher.cora.publish_message(tx_id)
     else:
+        logger.info(
+            "About to publish message to cs queue",
+            tx_id=tx_id,
+        )
         queued = publisher.cs.publish_message(tx_id)
 
     if not queued:
