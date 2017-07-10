@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 1.5.0 2017-07-10
   - Timestamp all logs as UTC
   - Add common library logging configurator
   - Support UPDATE statements for duplicated tx_ids
