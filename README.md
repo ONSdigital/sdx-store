@@ -76,6 +76,6 @@ Some of important environment variables available for configuration are listed b
 
 ### License
 
-Copyright © 2016, Office for National Statistics (https://www.ons.gov.uk)
+Copyright (c) 2016 Crown Copyright (Office for National Statistics)
 
 Released under MIT license, see [LICENSE](LICENSE) for details.
