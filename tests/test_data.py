@@ -1,5 +1,6 @@
 test_message = '''
 {
+  "invalid": false,
   "type": "uk.gov.ons.edc.eq:surveyresponse",
   "origin": "uk.gov.ons.edc.eq",
   "survey_id": "194825",
@@ -21,6 +22,32 @@ test_message = '''
     "3": "2",
     "4": "Y"
   }
+}
+'''
+
+test_feedback_message = '''
+{
+  "invalid": false,
+  "origin": "uk.gov.ons.edc.eq",
+  "survey_id": "feedback",
+  "survey_type": "RSI",
+  "survey_period": "2016",
+  "submitted_at": "2016-03-12T10:39:40Z",
+  "satisfaction": "satisfied",
+  "comment": "comment"
+}
+'''
+
+invalid_feedback_message = '''
+{
+  "invalid": true,
+  "origin": "uk.gov.ons.edc.eq",
+  "survey_id": "feedback",
+  "survey_type": "RSI",
+  "survey_period": "2016",
+  "submitted_at": "2016-03-12T10:39:40Z",
+  "satisfaction": "satisfied",
+  "comment": "comment"
 }
 '''
 
