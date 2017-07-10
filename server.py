@@ -7,7 +7,7 @@ import os
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
 from sdx.common.logger_config import logger_initial_config
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect, select, Integer
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from structlog import wrap_logger
@@ -83,6 +83,34 @@ class SurveyResponse(db.Model):
 
     def __repr__(self):
         return '<SurveyResponse {}>'.format(self.tx_id)
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+
+class FeedbackResponse(db.Model):
+    __tablename__ = "feedback_responses"
+    id = db.Column("id",
+                   Integer,
+                   primary_key=True)
+
+    ts = db.Column("ts",
+                   db.TIMESTAMP(timezone=True),
+                   server_default=db.func.now(),
+                   onupdate=db.func.now())
+
+    invalid = db.Column("invalid",
+                        db.Boolean,
+                        default=False)
+
+    data = db.Column("data", JSONB)
+
+    def __init__(self, invalid, data):
+        self.invalid = invalid
+        self.data = data
+
+    def __repr__(self):
+        return '<FeedbackResponse {}>'.format(self.tx_id)
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -176,6 +204,29 @@ def save_response(bound_logger, survey_response):
     return invalid
 
 
+def save_feedback_response(survey_feedback_response):
+    logger.info("Saving feedback response")
+    invalid = survey_feedback_response.get("invalid")
+
+    feedback_response = FeedbackResponse(invalid=invalid,
+                                         data=survey_feedback_response)
+
+    try:
+        db.session.add(feedback_response)
+        db.session.commit()
+    except SQLAlchemyError as e:
+        logger.info("Unable to save response", error=e)
+        raise SQLAlchemyError
+    except IntegrityError as e:
+        logger.info("Integrity error in database. Rolling back commit",
+                    error=e)
+        raise IntegrityError
+    else:
+        logger.info("Feedback response saved")
+
+    return invalid
+
+
 def test_sql(connection):
     """Run a SELECT 1 to test the database connection"""
     logger.debug("Executing select 1")
@@ -212,37 +263,48 @@ def do_save_response():
                                 status_code=400,
                                 payload=request.args)
 
-    metadata = survey_response['metadata']
+    if survey_response['survey_id'] == 'feedback':
 
-    bound_logger = logger.bind(user_id=metadata['user_id'],
-                               ru_ref=metadata['ru_ref'],
-                               tx_id=survey_response['tx_id'])
+        try:
+            save_feedback_response(survey_response)
+        except SQLAlchemyError:
+            return server_error("Database error")
+        except IntegrityError:
+            return server_error("Integrity error")
 
-    publisher.logger = bound_logger
-
-    try:
-        invalid = save_response(bound_logger, survey_response)
-    except SQLAlchemyError:
-        return server_error("Database error")
-    except IntegrityError:
-        return server_error("Integrity error")
-
-    if invalid is True:
-        return jsonify(invalid)
-
-    tx_id = survey_response['tx_id']
-
-    if survey_response['survey_id'] == 'census':
-        queued = publisher.ctp.publish_message(tx_id)
-    elif survey_response['survey_id'] == '144':
-        queued = publisher.cora.publish_message(tx_id)
     else:
-        queued = publisher.cs.publish_message(tx_id)
+        metadata = survey_response['metadata']
 
-    if not queued:
-        return server_error("Unable to queue notification")
+        bound_logger = logger.bind(user_id=metadata['user_id'],
+                                   ru_ref=metadata['ru_ref'],
+                                   tx_id=survey_response['tx_id'])
 
-    publisher.logger = logger
+        publisher.logger = bound_logger
+
+        try:
+            invalid = save_response(bound_logger, survey_response)
+        except SQLAlchemyError:
+            return server_error("Database error")
+        except IntegrityError:
+            return server_error("Integrity error")
+
+        if invalid is True:
+            return jsonify(invalid)
+
+        tx_id = survey_response['tx_id']
+
+        if survey_response['survey_id'] == 'census':
+            queued = publisher.ctp.publish_message(tx_id)
+        elif survey_response['survey_id'] == '144':
+            queued = publisher.cora.publish_message(tx_id)
+        else:
+            queued = publisher.cs.publish_message(tx_id)
+
+        if not queued:
+            return server_error("Unable to queue notification")
+
+        publisher.logger = logger
+
     return jsonify(result="ok")
 
 
