@@ -7,7 +7,7 @@ import os
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
 from sdx.common.logger_config import logger_initial_config
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect, select, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from structlog import wrap_logger
@@ -87,6 +87,34 @@ class SurveyResponse(db.Model):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
+class FeedbackResponse(db.Model):
+    __tablename__ = "feedback_responses"
+    id = db.Column("id",
+                   Integer,
+                   primary_key=True)
+
+    ts = db.Column("ts",
+                   db.TIMESTAMP(timezone=True),
+                   server_default=db.func.now(),
+                   onupdate=db.func.now())
+
+    invalid = db.Column("invalid",
+                        db.Boolean,
+                        default=False)
+
+    data = db.Column("data", JSONB)
+
+    survey = db.Column("survey", String)
+
+    period = db.Column("period", String)
+
+    def __init__(self, invalid, data, survey, period):
+        self.invalid = invalid
+        self.data = data
+        self.survey = survey
+        self.period = period
+
+
 def create_tables():
     logger.info("Creating tables")
     db.create_all()
@@ -141,13 +169,13 @@ def merge(response):
     try:
         db.session.merge(response)
         db.session.commit()
-    except SQLAlchemyError as e:
-        logger.info("Unable to save response", error=e)
-        raise SQLAlchemyError
     except IntegrityError as e:
         logger.info("Integrity error in database. Rolling back commit",
                     error=e)
-        raise IntegrityError
+        raise
+    except SQLAlchemyError as e:
+        logger.info("Unable to save response", error=e)
+        raise SQLAlchemyError
     else:
         logger.info("Response saved", tx_id=response.tx_id)
 
@@ -172,6 +200,33 @@ def save_response(bound_logger, survey_response):
                               data=survey_response)
 
     merge(response)
+    return invalid
+
+
+def save_feedback_response(survey_feedback_response):
+    logger.info("Saving feedback response")
+    invalid = survey_feedback_response.get("invalid")
+    survey = survey_feedback_response.get("survey_type")
+    period = survey_feedback_response.get("survey_period")
+
+    feedback_response = FeedbackResponse(invalid=invalid,
+                                         data=survey_feedback_response,
+                                         survey=survey,
+                                         period=period)
+
+    try:
+        db.session.add(feedback_response)
+        db.session.commit()
+    except IntegrityError as e:
+        logger.info("Integrity error in database. Rolling back commit",
+                    error=e)
+        raise
+    except SQLAlchemyError as e:
+        logger.info("Unable to save response", error=e)
+        raise SQLAlchemyError
+    else:
+        logger.info("Feedback response saved")
+
     return invalid
 
 
