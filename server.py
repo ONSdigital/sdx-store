@@ -241,6 +241,10 @@ def do_save_response():
     if not queued:
         return server_error("Unable to queue notification")
 
+    logger.info(
+        "Message queued successfully",
+        tx_id=tx_id,
+    )
     publisher.logger = logger
     return jsonify(result="ok")
 
@@ -291,15 +295,31 @@ def do_queue():
     response = json.loads(result.response[0].decode('utf-8'))
 
     if response['survey_response']['survey_id'] == 'census':
+        logger.info(
+            "About to publish message to ctp queue"
+            tx_id=tx_id,
+        )
         queued = publisher.ctp.publish_message(tx_id)
     elif response['survey_response']['survey_id'] == '144':
+        logger.info(
+            "About to publish message to cora queue"
+            tx_id=tx_id,
+        )
         queued = publisher.cora.publish_message(tx_id)
     else:
+        logger.info(
+            "About to publish message to cs queue"
+            tx_id=tx_id,
+        )
         queued = publisher.cs.publish_message(tx_id)
 
     if not queued:
         return server_error("Unable to queue response")
 
+    logger.info(
+        "Message queued successfully",
+        tx_id=tx_id,
+    )
     return jsonify(result="ok")
 
 
