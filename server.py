@@ -232,17 +232,29 @@ def do_save_response():
     tx_id = survey_response['tx_id']
 
     if survey_response['survey_id'] == 'census':
+        logger.info(
+            "About to publish notification to ctp queue",
+            tx_id=tx_id,
+        )
         queued = publisher.ctp.publish_message(tx_id)
     elif survey_response['survey_id'] == '144':
+        logger.info(
+            "About to publish notification to cora queue",
+            tx_id=tx_id,
+        )
         queued = publisher.cora.publish_message(tx_id)
     else:
+        logger.info(
+            "About to publish notification to cs queue",
+            tx_id=tx_id,
+        )
         queued = publisher.cs.publish_message(tx_id)
 
     if not queued:
         return server_error("Unable to queue notification")
 
     logger.info(
-        "Message queued successfully",
+        "Notification published successfully",
         tx_id=tx_id,
     )
     publisher.logger = logger
@@ -296,19 +308,19 @@ def do_queue():
 
     if response['survey_response']['survey_id'] == 'census':
         logger.info(
-            "About to publish message to ctp queue",
+            "About to publish response to ctp queue",
             tx_id=tx_id,
         )
         queued = publisher.ctp.publish_message(tx_id)
     elif response['survey_response']['survey_id'] == '144':
         logger.info(
-            "About to publish message to cora queue",
+            "About to publish response to cora queue",
             tx_id=tx_id,
         )
         queued = publisher.cora.publish_message(tx_id)
     else:
         logger.info(
-            "About to publish message to cs queue",
+            "About to publish response to cs queue",
             tx_id=tx_id,
         )
         queued = publisher.cs.publish_message(tx_id)
@@ -317,7 +329,7 @@ def do_queue():
         return server_error("Unable to queue response")
 
     logger.info(
-        "Message published successfully",
+        "Response published successfully",
         tx_id=tx_id,
     )
     return jsonify(result="ok")
