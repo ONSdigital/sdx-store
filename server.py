@@ -232,31 +232,19 @@ def do_save_response():
     tx_id = survey_response['tx_id']
 
     if survey_response['survey_id'] == 'census':
-        logger.info(
-            "About to publish notification to ctp queue",
-            tx_id=tx_id,
-        )
+        bound_logger.info("About to publish notification to ctp queue")
         queued = publisher.ctp.publish_message(tx_id)
     elif survey_response['survey_id'] == '144':
-        logger.info(
-            "About to publish notification to cora queue",
-            tx_id=tx_id,
-        )
+        bound_logger.info("About to publish notification to cora queue")
         queued = publisher.cora.publish_message(tx_id)
     else:
-        logger.info(
-            "About to publish notification to cs queue",
-            tx_id=tx_id,
-        )
+        bound_logger.info("About to publish notification to cs queue")
         queued = publisher.cs.publish_message(tx_id)
 
     if not queued:
         return server_error("Unable to queue notification")
 
-    logger.info(
-        "Notification published successfully",
-        tx_id=tx_id,
-    )
+    bound_logger.info("Notification published successfully")
     publisher.logger = logger
     return jsonify(result="ok")
 
@@ -306,32 +294,24 @@ def do_queue():
 
     response = json.loads(result.response[0].decode('utf-8'))
 
+    bound_logger = logger.bind(tx_id=tx_id)
+    publisher.logger = bound_logger
+
     if response['survey_response']['survey_id'] == 'census':
-        logger.info(
-            "About to publish response to ctp queue",
-            tx_id=tx_id,
-        )
+        bound_logger.info("About to publish response to ctp queue")
         queued = publisher.ctp.publish_message(tx_id)
     elif response['survey_response']['survey_id'] == '144':
-        logger.info(
-            "About to publish response to cora queue",
-            tx_id=tx_id,
-        )
+        bound_logger.info("About to publish response to cora queue")
         queued = publisher.cora.publish_message(tx_id)
     else:
-        logger.info(
-            "About to publish response to cs queue",
-            tx_id=tx_id,
-        )
+        bound_logger.info("About to publish response to cs queue")
         queued = publisher.cs.publish_message(tx_id)
 
     if not queued:
         return server_error("Unable to queue response")
 
-    logger.info(
-        "Response published successfully",
-        tx_id=tx_id,
-    )
+    bound_logger.info("Response published successfully")
+    publisher.logger = logger
     return jsonify(result="ok")
 
 
