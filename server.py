@@ -296,19 +296,19 @@ def do_queue():
 
     if response['survey_response']['survey_id'] == 'census':
         logger.info(
-            "About to publish message to ctp queue"
+            "About to publish message to ctp queue",
             tx_id=tx_id,
         )
         queued = publisher.ctp.publish_message(tx_id)
     elif response['survey_response']['survey_id'] == '144':
         logger.info(
-            "About to publish message to cora queue"
+            "About to publish message to cora queue",
             tx_id=tx_id,
         )
         queued = publisher.cora.publish_message(tx_id)
     else:
         logger.info(
-            "About to publish message to cs queue"
+            "About to publish message to cs queue",
             tx_id=tx_id,
         )
         queued = publisher.cs.publish_message(tx_id)
