@@ -235,6 +235,7 @@ def do_get_response(mongo_id):
 
 @app.route('/queue', methods=['POST'])
 def do_queue():
+    logger.info("Begin Queueing")
     mongo_id = request.get_json(force=True)['id']
     # check document exists with id
     result = do_get_response(mongo_id)
@@ -253,6 +254,7 @@ def do_queue():
     if queued is False:
         return server_error("Unable to queue notification")
 
+    logger.info("Successfully Queued")
     return jsonify(result="ok")
 
 
