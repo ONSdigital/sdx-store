@@ -1,4 +1,5 @@
 ### Unreleased
+  - Log message queue publishing
 
 ### 1.4.1 2017-03-15
   - Log version number on startup
