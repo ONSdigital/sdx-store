@@ -1,4 +1,16 @@
 ### Unreleased
+  - Timestamp all logs as UTC
+  - Add common library logging configurator
+  - Support UPDATE statements for duplicated tx_ids
+  - Use Postgres backend via SQLAlchemy ORM.
+  - Persist QueuePublishers
+  - Add environment variables to README
+  - Remove environment variable defaults
+  - Correct license attribution
+  - Add codacy badge
+  - Add support for codecov to see unit test coverage
+  - Update and pin version of sdx-common to 0.7.0
+  - Add additional logging
 
 ### 1.4.1 2017-03-15
   - Log version number on startup
