@@ -18,9 +18,10 @@ from queue_publisher import Publisher
 import settings
 
 
-__version__ = "1.5.0"
+__version__ = "1.4.1"
 
-logger_initial_config(service_name='sdx-store')
+logger_initial_config(service_name='sdx-store', log_level=settings.LOGGING_LEVEL)
+
 logger = wrap_logger(logging.getLogger(__name__))
 
 publisher = Publisher(logger)
@@ -266,40 +267,48 @@ def do_save_response():
                                 status_code=400,
                                 payload=request.args)
 
-    metadata = survey_response['metadata']
+    if survey_response['survey_id'] == 'feedback':
 
-    bound_logger = logger.bind(user_id=metadata['user_id'],
-                               ru_ref=metadata['ru_ref'],
-                               tx_id=survey_response['tx_id'])
+        try:
+            save_feedback_response(survey_response)
+        except SQLAlchemyError:
+            return server_error("Database error")
+        except IntegrityError:
+            return server_error("Integrity error")
 
-    publisher.logger = bound_logger
-
-    try:
-        invalid = save_response(bound_logger, survey_response)
-    except SQLAlchemyError:
-        return server_error("Database error")
-    except IntegrityError:
-        return server_error("Integrity error")
-
-    if invalid is True:
-        return jsonify(invalid)
-
-    tx_id = survey_response['tx_id']
-
-    if survey_response['survey_id'] == 'census':
-        bound_logger.info("About to publish notification to ctp queue")
-        queued = publisher.ctp.publish_message(tx_id)
-    elif survey_response['survey_id'] == '144':
-        bound_logger.info("About to publish notification to cora queue")
-        queued = publisher.cora.publish_message(tx_id)
     else:
-        bound_logger.info("About to publish notification to cs queue")
-        queued = publisher.cs.publish_message(tx_id)
+        metadata = survey_response['metadata']
 
-    if not queued:
-        return server_error("Unable to queue notification")
+        bound_logger = logger.bind(user_id=metadata['user_id'],
+                                   ru_ref=metadata['ru_ref'],
+                                   tx_id=survey_response['tx_id'])
 
-    publisher.logger = logger
+        publisher.logger = bound_logger
+
+        try:
+            invalid = save_response(bound_logger, survey_response)
+        except SQLAlchemyError:
+            return server_error("Database error")
+        except IntegrityError:
+            return server_error("Integrity error")
+
+        if invalid is True:
+            return jsonify(invalid)
+
+        tx_id = survey_response['tx_id']
+
+        if survey_response['survey_id'] == 'census':
+            queued = publisher.ctp.publish_message(tx_id)
+        elif survey_response['survey_id'] == '144':
+            queued = publisher.cora.publish_message(tx_id)
+        else:
+            queued = publisher.cs.publish_message(tx_id)
+
+        if not queued:
+            return server_error("Unable to queue notification")
+
+        publisher.logger = logger
+
     return jsonify(result="ok")
 
 
