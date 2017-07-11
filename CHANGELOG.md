@@ -1,6 +1,9 @@
 ### Unreleased
   - Add support for feedback survey responses
 
+### 2.0.0 2017-07-11
+  - Version bump
+
 ### 1.5.0 2017-07-10
   - Timestamp all logs as UTC
   - Add common library logging configurator
