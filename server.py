@@ -18,7 +18,7 @@ from queue_publisher import Publisher
 import settings
 
 
-__version__ = "1.4.1"
+__version__ = "1.5.0"
 
 logger_initial_config(service_name='sdx-store', log_level=settings.LOGGING_LEVEL)
 
