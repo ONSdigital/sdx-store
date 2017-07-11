@@ -1,4 +1,4 @@
-dev: check-env
+dev:
 	if pip list | grep sdx-common; \
 	then \
 		cd .. && pip3 uninstall -y sdx-common && pip3 install -I ./sdx-common; \
@@ -18,8 +18,3 @@ test:
 
 start:
 	./startup.sh
-
-check-env:
-ifeq ($(SDX_HOME),)
-	$(error SDX_HOME is not set)
-endif
