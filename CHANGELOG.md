@@ -10,7 +10,7 @@
   - Add codacy badge
   - Add support for codecov to see unit test coverage
   - Update and pin version of sdx-common to 0.7.0
-  - Feedback survey responses routed to another table
+  - Add support for feedback survey responses
 
 ### 1.4.1 2017-03-15
   - Log version number on startup
