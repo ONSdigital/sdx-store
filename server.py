@@ -171,12 +171,12 @@ def merge(response):
         db.session.merge(response)
         db.session.commit()
     except IntegrityError as e:
-        logger.info("Integrity error in database. Rolling back commit",
-                    error=e)
-        raise
+        logger.error("Integrity error in database. Rolling back commit",
+                     error=e)
+        raise e
     except SQLAlchemyError as e:
-        logger.info("Unable to save response", error=e)
-        raise SQLAlchemyError
+        logger.error("Unable to save response", error=e)
+        raise e
     else:
         logger.info("Response saved", tx_id=response.tx_id)
 
@@ -219,12 +219,11 @@ def save_feedback_response(bound_logger, survey_feedback_response):
         db.session.add(feedback_response)
         db.session.commit()
     except IntegrityError as e:
-        logger.info("Integrity error in database. Rolling back commit",
-                    error=e)
-        raise
+        logger.error("Integrity error in database. Rolling back commit", error=e)
+        raise e
     except SQLAlchemyError as e:
-        logger.info("Unable to save response", error=e)
-        raise SQLAlchemyError
+        logger.error("Unable to save response", error=e)
+        raise e
     else:
         logger.info("Feedback response saved")
 
@@ -295,7 +294,7 @@ def do_save_response():
         except IntegrityError:
             return server_error("Integrity error")
 
-        if invalid is True:
+        if invalid:
             return jsonify(invalid)
 
         tx_id = survey_response['tx_id']
