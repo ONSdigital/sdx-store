@@ -59,7 +59,7 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(True, invalid)
 
     def test_feedback_response_invalid_true_returns_false(self):
-        invalid = server.save_feedback_response(json.loads(invalid_feedback_message))
+        invalid = server.save_feedback_response(logger, json.loads(invalid_feedback_message))
         self.assertEqual(True, invalid)
 
     def test_response_not_saved_returns_500(self):

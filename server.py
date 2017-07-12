@@ -204,8 +204,8 @@ def save_response(bound_logger, survey_response):
     return invalid
 
 
-def save_feedback_response(survey_feedback_response):
-    logger.info("Saving feedback response")
+def save_feedback_response(bound_logger, survey_feedback_response):
+    bound_logger.info("Saving feedback response")
     invalid = survey_feedback_response.get("invalid")
     survey = survey_feedback_response.get("survey_type")
     period = survey_feedback_response.get("survey_period")
@@ -269,8 +269,11 @@ def do_save_response():
 
     if survey_response['survey_id'] == 'feedback':
 
+        bound_logger = logger.bind(survey=survey_response.get("survey_type"),
+                                   survey_id=survey_response.get("survey_id"))
+
         try:
-            save_feedback_response(survey_response)
+            save_feedback_response(bound_logger, survey_response)
         except SQLAlchemyError:
             return server_error("Database error")
         except IntegrityError:
@@ -307,7 +310,7 @@ def do_save_response():
         if not queued:
             return server_error("Unable to queue notification")
 
-        publisher.logger = logger
+    publisher.logger = logger
 
     return jsonify(result="ok")
 
