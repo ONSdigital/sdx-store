@@ -15,7 +15,6 @@ DB_URI = 'postgresql://{}:{}@{}:{}/{}'.format(DB_USER,
                                               DB_PORT,
                                               DB_NAME)
 
-
 RABBIT_URL = 'amqp://{user}:{password}@{hostname}:{port}/{vhost}'.format(
     hostname=os.getenv('SDX_STORE_RABBITMQ_HOST', 'rabbit'),
     port=os.getenv('SDX_STORE_RABBITMQ_PORT', '5672'),
