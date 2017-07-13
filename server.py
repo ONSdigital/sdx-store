@@ -294,7 +294,7 @@ def do_save_response():
         except IntegrityError:
             return server_error("Integrity error")
 
-        if invalid is True:
+        if invalid:
             return jsonify(invalid)
 
         tx_id = survey_response['tx_id']
