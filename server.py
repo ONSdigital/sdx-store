@@ -286,7 +286,7 @@ def do_save_response():
         try:
             metadata = survey_response['metadata']
         except KeyError:
-            raise InvalidUsageError("Missing metadata Unable to save response", 400)
+            raise InvalidUsageError("Missing metadata. Unable to save response", 400)
 
         bound_logger = logger.bind(user_id=metadata.get('user_id'),
                                    ru_ref=metadata.get('ru_ref'),
@@ -319,7 +319,7 @@ def do_save_response():
                 queued = publisher.cs.publish_message(tx_id)
 
         except KeyError:
-            raise InvalidUsageError("Missing survey_id Unable to save response", 400)
+            raise InvalidUsageError("Missing survey_id. Unable to save response", 400)
 
         if not queued:
             return server_error("Unable to queue notification")
