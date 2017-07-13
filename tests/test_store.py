@@ -7,8 +7,8 @@ from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
-from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message,\
-    test_feedback_message, invalid_feedback_message
+from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
+from tests.test_data import test_feedback_message, invalid_feedback_message
 
 import server
 from server import db, InvalidUsageError, logger

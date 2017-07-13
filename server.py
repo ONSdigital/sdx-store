@@ -172,9 +172,11 @@ def merge(response):
     except IntegrityError as e:
         logger.error("Integrity error in database. Rolling back commit",
                      error=e)
+        db.session.rollback()
         raise e
     except SQLAlchemyError as e:
         logger.error("Unable to save response", error=e)
+        db.session.rollback()
         raise e
     else:
         logger.info("Response saved", tx_id=response.tx_id)
@@ -219,9 +221,11 @@ def save_feedback_response(bound_logger, survey_feedback_response):
         db.session.commit()
     except IntegrityError as e:
         logger.error("Integrity error in database. Rolling back commit", error=e)
+        db.session.rollback()
         raise e
     except SQLAlchemyError as e:
         logger.error("Unable to save response", error=e)
+        db.session.rollback()
         raise e
     else:
         logger.info("Feedback response saved")
@@ -265,7 +269,7 @@ def do_save_response():
                                 status_code=400,
                                 payload=request.args)
 
-    if survey_response['survey_id'] == 'feedback':
+    if survey_response.get('survey_id') == 'feedback':
 
         bound_logger = logger.bind(survey=survey_response.get("survey_type"),
                                    survey_id=survey_response.get("survey_id"))
@@ -279,11 +283,14 @@ def do_save_response():
 
     else:
 
-        metadata = survey_response['metadata']
+        try:
+            metadata = survey_response['metadata']
+        except KeyError:
+            raise InvalidUsageError("Missing metadata Unable to save response", 400)
 
-        bound_logger = logger.bind(user_id=metadata['user_id'],
-                                   ru_ref=metadata['ru_ref'],
-                                   tx_id=survey_response['tx_id'])
+        bound_logger = logger.bind(user_id=metadata.get('user_id'),
+                                   ru_ref=metadata.get('ru_ref'),
+                                   tx_id=survey_response.get('tx_id'))
 
         publisher.logger = bound_logger
 
@@ -297,17 +304,22 @@ def do_save_response():
         if invalid:
             return jsonify(invalid)
 
-        tx_id = survey_response['tx_id']
+        tx_id = survey_response.get('tx_id')
 
-        if survey_response['survey_id'] == 'census':
-            bound_logger.info("About to publish notification to ctp queue")
-            queued = publisher.ctp.publish_message(tx_id)
-        elif survey_response['survey_id'] == '144':
-            bound_logger.info("About to publish notification to cora queue")
-            queued = publisher.cora.publish_message(tx_id)
-        else:
-            bound_logger.info("About to publish notification to cs queue")
-            queued = publisher.cs.publish_message(tx_id)
+        try:
+
+            if survey_response['survey_id'] == 'census':
+                bound_logger.info("About to publish notification to ctp queue")
+                queued = publisher.ctp.publish_message(tx_id)
+            elif survey_response['survey_id'] == '144':
+                bound_logger.info("About to publish notification to cora queue")
+                queued = publisher.cora.publish_message(tx_id)
+            else:
+                bound_logger.info("About to publish notification to cs queue")
+                queued = publisher.cs.publish_message(tx_id)
+
+        except KeyError:
+            raise InvalidUsageError("Missing survey_id Unable to save response", 400)
 
         if not queued:
             return server_error("Unable to queue notification")
