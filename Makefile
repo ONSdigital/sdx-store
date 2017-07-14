@@ -1,4 +1,4 @@
-dev: check-env
+dev:
 	if pip list | grep sdx-common; \
 	then \
 		cd .. && pip3 uninstall -y sdx-common && pip3 install -I ./sdx-common; \
@@ -9,6 +9,8 @@ dev: check-env
 	pip3 install -r requirements.txt
 
 build:
+	git clone --branch 0.7.0 https://github.com/ONSdigital/sdx-common.git
+	pip3 install ./sdx-common
 	pip3 install -r requirements.txt
 
 test:
@@ -18,8 +20,3 @@ test:
 
 start:
 	./startup.sh
-
-check-env:
-ifeq ($(SDX_HOME),)
-	$(error SDX_HOME is not set)
-endif
