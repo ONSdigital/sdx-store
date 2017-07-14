@@ -9,6 +9,8 @@ dev:
 	pip3 install -r requirements.txt
 
 build:
+	git clone --branch 0.7.0 https://github.com/ONSdigital/sdx-common.git
+	pip3 install ./sdx-common
 	pip3 install -r requirements.txt
 
 test:
