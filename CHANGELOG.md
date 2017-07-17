@@ -1,5 +1,6 @@
 ### Unreleased
   - Add support for feedback survey responses
+  - Change all instances of ADD to COPY in Dockerfile
 
 ### 2.0.0 2017-07-11
   - Version bump
