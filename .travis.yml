@@ -14,8 +14,8 @@ before_script:
 script:
     - make test
     - coverage run -m unittest tests/*.py
-services:
-    - postgresql
+# services:
+#     - postgresql
 dist: trusty
 after_success:
     - codecov
