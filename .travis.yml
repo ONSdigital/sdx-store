@@ -8,6 +8,7 @@ before_install:
     - git clone https://github.com/ONSdigital/sdx-common.git
     - pip3 install ./sdx-common
 install:
+    - make clean
     - make build
     - pip install codecov
 before_script:
