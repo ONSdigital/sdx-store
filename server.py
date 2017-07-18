@@ -104,9 +104,9 @@ class FeedbackResponse(db.Model):
 
     data = db.Column("data", JSONB)
 
-    survey = db.Column("survey", String)
+    survey = db.Column("survey", String(length=25))
 
-    period = db.Column("period", String)
+    period = db.Column("period", String(length=25))
 
     def __init__(self, invalid, data, survey, period):
         self.invalid = invalid
