@@ -5,19 +5,19 @@ import unittest
 import mock
 from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-import testing.postgresql
+# import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
 
 import server
 from server import db, InvalidUsageError, logger
 
-Postgresql = testing.postgresql.PostgresqlFactory(cache_initialized_db=True)
+# Postgresql = testing.postgresql.PostgresqlFactory(cache_initialized_db=True)
 
 
-def tearDownModule():
-    # clear cached database at end of tests
-    Postgresql.clear_cache()
+# def tearDownModule():
+#   clear cached database at end of tests
+#   Postgresql.clear_cache()
 
 
 class TestStoreService(unittest.TestCase):
@@ -34,7 +34,7 @@ class TestStoreService(unittest.TestCase):
     updated_json = json.loads(updated_message)
 
     def setUp(self):
-        self.postgres = Postgresql()
+        # self.postgres = Postgresql()
         self.app = server.app.test_client()
         self.app.testing = True
         server.create_tables()
@@ -42,7 +42,7 @@ class TestStoreService(unittest.TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
-        self.postgres.stop()
+        # self.postgres.stop()
 
     # /responses POST
     def test_empty_post_request(self):
