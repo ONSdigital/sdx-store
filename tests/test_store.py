@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
+from tests.test_data import test_feedback_message, invalid_feedback_message
 
 import server
 from server import db, InvalidUsageError, logger
@@ -49,10 +50,20 @@ class TestStoreService(unittest.TestCase):
         invalid = server.save_response(logger, json.loads(invalid_message))
         self.assertEqual(True, invalid)
 
+    def test_feedback_response_invalid_true_returns_false(self):
+        invalid = server.save_feedback_response(logger, json.loads(invalid_feedback_message))
+        self.assertEqual(True, invalid)
+
     def test_response_not_saved_returns_500(self):
         with mock.patch('server.db.session.commit') as db_mock:
             db_mock.side_effect = SQLAlchemyError
             r = self.app.post(self.endpoints['responses'], data=test_message)
+            self.assertEqual(500, r.status_code)
+
+    def test_response_not_saved_returns_500_feedback(self):
+        with mock.patch('server.db.session.commit') as db_mock:
+            db_mock.side_effect = SQLAlchemyError
+            r = self.app.post(self.endpoints['responses'], data=test_feedback_message)
             self.assertEqual(500, r.status_code)
 
     def test_queue_fails_returns_500(self):
@@ -67,6 +78,15 @@ class TestStoreService(unittest.TestCase):
         with mock.patch('server.db.session.commit') as db_mock:
             db_mock.side_effect = IntegrityError(None, None, None, None)
             r = self.app.post(self.endpoints['responses'], data=test_message)
+            self.assertEqual(500, r.status_code)
+
+        db.session.remove()
+        db.drop_all()
+
+    def test_integrity_error_returns_500_feedback(self):
+        with mock.patch('server.db.session.commit') as db_mock:
+            db_mock.side_effect = IntegrityError(None, None, None, None)
+            r = self.app.post(self.endpoints['responses'], data=test_feedback_message)
             self.assertEqual(500, r.status_code)
 
         db.session.remove()
