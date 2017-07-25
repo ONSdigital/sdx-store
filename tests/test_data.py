@@ -29,11 +29,15 @@ test_feedback_message = '''
    "invalid": false,
    "origin": "uk.gov.ons.edc.eq",
    "survey_id": "feedback",
-   "survey_type": "RSI",
-   "survey_period": "2016",
+   "associated_survey": "RSI",
    "submitted_at": "2016-03-12T10:39:40Z",
    "satisfaction": "satisfied",
-   "comment": "comment"
+   "comment": "comment",
+   "collection": {
+    "exercise_sid": "hfjdskf",
+    "instrument_id": "1",
+    "period": "0616"
+    }
  }
  '''
 
@@ -42,11 +46,16 @@ invalid_feedback_message = '''
    "invalid": true,
    "origin": "uk.gov.ons.edc.eq",
    "survey_id": "feedback",
-   "survey_type": "RSI",
-   "survey_period": "2016",
+   "associated_survey": "RSI",
    "submitted_at": "2016-03-12T10:39:40Z",
    "satisfaction": "satisfied",
-   "comment": "comment"
+   "comment": "comment",
+   "collection": {
+    "exercise_sid": "hfjdskf",
+    "instrument_id": "1",
+    "period": "0616"
+    }
+
  }
  '''
 
