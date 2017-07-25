@@ -209,7 +209,7 @@ def save_feedback_response(bound_logger, survey_feedback_response):
     bound_logger.info("Saving feedback response")
     invalid = survey_feedback_response.get("invalid")
     survey = survey_feedback_response.get("associated_survey")
-    period = survey_feedback_response.get("collection").get("period")
+    period = survey_feedback_response.get("collection", {}).get("period")
 
     feedback_response = FeedbackResponse(invalid=invalid,
                                          data=survey_feedback_response,
