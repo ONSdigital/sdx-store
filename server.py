@@ -379,13 +379,13 @@ def do_queue():
 
     if response['survey_response']['survey_id'] == 'census':
         bound_logger.info("About to publish response to ctp queue")
-        queued = publisher.ctp.publish_message(tx_id, tx_id)
+        queued = publisher.ctp.publish_message(tx_id)
     elif response['survey_response']['survey_id'] == '144':
         bound_logger.info("About to publish response to cora queue")
-        queued = publisher.cora.publish_message(tx_id, tx_id)
+        queued = publisher.cora.publish_message(tx_id)
     else:
         bound_logger.info("About to publish response to cs queue")
-        queued = publisher.cs.publish_message(tx_id, tx_id)
+        queued = publisher.cs.publish_message(tx_id)
 
     if not queued:
         return server_error("Unable to queue response")
