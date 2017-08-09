@@ -3,6 +3,7 @@ import logging
 import unittest
 
 import mock
+from flask import Response
 from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
@@ -148,6 +149,28 @@ class TestStoreService(unittest.TestCase):
 
         db.session.remove()
         db.drop_all()
+
+    # /queue POST
+
+    def test_queue_fails_returns_500_queue_endpoint(self):
+        with mock.patch('server.do_get_response') as call_mock:
+            response = Response()
+            response.status_code = 200
+            response.response.append(test_message)
+            call_mock.return_value = response
+            with mock.patch('server.publisher.cs.publish_message', return_value=False):
+                r = self.app.post(self.endpoints['queue'], data=test_message)
+                self.assertEqual(500, r.status_code)
+
+    def test_queue_succeeds_returns_200_queue_endpoint(self):
+        with mock.patch('server.do_get_response') as call_mock:
+            response = Response()
+            response.status_code = 200
+            response.response.append(test_message)
+            call_mock.return_value = response
+            with mock.patch('server.publisher.cs.publish_message', return_value=True):
+                r = self.app.post(self.endpoints['queue'], data=test_message)
+                self.assertEqual(200, r.status_code)
 
     # test ranges for params
     def test_min_range_per_page(self):
