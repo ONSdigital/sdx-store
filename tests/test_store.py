@@ -172,6 +172,16 @@ class TestStoreService(unittest.TestCase):
                 r = self.app.post(self.endpoints['queue'], data=test_message)
                 self.assertEqual(200, r.status_code)
 
+    def test_queue_missing_tx_id_returns_400(self):
+        with mock.patch('server.do_get_response') as call_mock:
+            response = Response()
+            response.status_code = 200
+            response.response.append(test_message)
+            call_mock.return_value = response
+            with mock.patch('server.publisher.cs.publish_message', return_value=True):
+                r = self.app.post(self.endpoints['queue'], data="")
+                self.assertEqual(400, r.status_code)
+
     # test ranges for params
     def test_min_range_per_page(self):
         r = self.app.get(self.endpoints['responses'] + '?per_page=0')

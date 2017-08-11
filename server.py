@@ -366,7 +366,12 @@ def do_get_response(tx_id):
 
 @app.route('/queue', methods=['POST'])
 def do_queue():
-    tx_id = request.get_json(force=True)['tx_id']
+    try:
+        tx_id = request.get_json(force=True)['tx_id']
+    except KeyError:
+        raise InvalidUsageError("Missing transaction id.",
+                                400)
+
     # check document exists with id
     result = do_get_response(tx_id)
     if result.status_code != 200:
