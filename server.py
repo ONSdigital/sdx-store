@@ -366,21 +366,26 @@ def do_get_response(tx_id):
 
 @app.route('/queue', methods=['POST'])
 def do_queue():
-    tx_id = request.get_json(force=True)['id']
+    try:
+        tx_id = request.get_json(force=True)['tx_id']
+    except KeyError:
+        raise InvalidUsageError("Missing transaction id.",
+                                400)
+
     # check document exists with id
     result = do_get_response(tx_id)
     if result.status_code != 200:
         return result
 
-    response = json.loads(result.response[0].decode('utf-8'))
+    response = json.loads(result.response[0])
 
     bound_logger = logger.bind(tx_id=tx_id)
     publisher.logger = bound_logger
 
-    if response['survey_response']['survey_id'] == 'census':
+    if response.get('survey_id') == 'census':
         bound_logger.info("About to publish response to ctp queue")
         queued = publisher.ctp.publish_message(tx_id)
-    elif response['survey_response']['survey_id'] == '144':
+    elif response.get('survey_id') == '144':
         bound_logger.info("About to publish response to cora queue")
         queued = publisher.cora.publish_message(tx_id)
     else:

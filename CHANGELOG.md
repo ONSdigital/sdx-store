@@ -1,3 +1,6 @@
+### Unreleased
+  - Add transaction ID (`tx_id`) to message header
+
 ### 2.1.0 2017-07-25
   - Add support for feedback survey responses
   - Change all instances of ADD to COPY in Dockerfile

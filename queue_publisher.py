@@ -67,7 +67,10 @@ class QueuePublisher(object):
 
     def _publish(self, message):
         try:
-            self._channel.basic_publish(exchange='', routing_key=self._queue, body=message)
+            self._channel.basic_publish(exchange='',
+                                        routing_key=self._queue,
+                                        body=message,
+                                        properties=pika.BasicProperties(headers={'tx_id': message}))
             self.logger.debug("Published message")
             return True
 
