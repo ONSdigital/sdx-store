@@ -1,4 +1,5 @@
 ### Unreleased
+  - Ensure integrity and version of library dependencies
   - Add transaction ID (`tx_id`) to message header
 
 ### 2.1.0 2017-07-25
