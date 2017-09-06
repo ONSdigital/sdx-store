@@ -1,6 +1,5 @@
 from datetime import datetime
 import json
-import logging
 import logging.handlers
 import os
 
@@ -14,7 +13,6 @@ from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 
-from queue_publisher import Publisher
 import settings
 
 
@@ -22,8 +20,6 @@ __version__ = "2.1.0"
 
 logger_initial_config(service_name='sdx-store', log_level=settings.LOGGING_LEVEL)
 logger = wrap_logger(logging.getLogger(__name__))
-
-publisher = Publisher(logger)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = settings.DB_URI
@@ -292,8 +288,6 @@ def do_save_response():
                                    ru_ref=metadata.get('ru_ref'),
                                    tx_id=survey_response.get('tx_id'))
 
-        publisher.logger = bound_logger
-
         try:
             invalid = save_response(bound_logger, survey_response)
         except SQLAlchemyError:
@@ -304,28 +298,7 @@ def do_save_response():
         if invalid:
             return jsonify(invalid)
 
-        tx_id = survey_response.get('tx_id')
-
-        try:
-
-            if survey_response['survey_id'] == 'census':
-                bound_logger.info("About to publish notification to ctp queue")
-                queued = publisher.ctp.publish_message(tx_id)
-            elif survey_response['survey_id'] == '144':
-                bound_logger.info("About to publish notification to cora queue")
-                queued = publisher.cora.publish_message(tx_id)
-            else:
-                bound_logger.info("About to publish notification to cs queue")
-                queued = publisher.cs.publish_message(tx_id)
-
-        except KeyError:
-            raise InvalidUsageError("Missing survey_id. Unable to save response", 400)
-
-        if not queued:
-            return server_error("Unable to queue notification")
-
         bound_logger.info("Notification published successfully")
-    publisher.logger = logger
     return jsonify(result="ok")
 
 
@@ -362,42 +335,6 @@ def do_get_response(tx_id):
             return jsonify({}), 404
     else:
         return jsonify({}), 404
-
-
-@app.route('/queue', methods=['POST'])
-def do_queue():
-    try:
-        tx_id = request.get_json(force=True)['tx_id']
-    except KeyError:
-        raise InvalidUsageError("Missing transaction id.",
-                                400)
-
-    # check document exists with id
-    result = do_get_response(tx_id)
-    if result.status_code != 200:
-        return result
-
-    response = json.loads(result.response[0])
-
-    bound_logger = logger.bind(tx_id=tx_id)
-    publisher.logger = bound_logger
-
-    if response.get('survey_id') == 'census':
-        bound_logger.info("About to publish response to ctp queue")
-        queued = publisher.ctp.publish_message(tx_id)
-    elif response.get('survey_id') == '144':
-        bound_logger.info("About to publish response to cora queue")
-        queued = publisher.cora.publish_message(tx_id)
-    else:
-        bound_logger.info("About to publish response to cs queue")
-        queued = publisher.cs.publish_message(tx_id)
-
-    if not queued:
-        return server_error("Unable to queue response")
-
-    bound_logger.info("Response published successfully")
-    publisher.logger = logger
-    return jsonify(result="ok")
 
 
 @app.route('/healthcheck', methods=['GET'])

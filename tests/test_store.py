@@ -3,7 +3,6 @@ import logging
 import unittest
 
 import mock
-from flask import Response
 from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
@@ -67,14 +66,6 @@ class TestStoreService(unittest.TestCase):
             r = self.app.post(self.endpoints['responses'], data=test_feedback_message)
             self.assertEqual(500, r.status_code)
 
-    def test_queue_fails_returns_500(self):
-        with mock.patch('server.publisher.cs.publish_message', return_value=False):
-            r = self.app.post(self.endpoints['responses'], data=test_message)
-            self.assertEqual(500, r.status_code)
-
-        db.session.remove()
-        db.drop_all()
-
     def test_integrity_error_returns_500(self):
         with mock.patch('server.db.session.commit') as db_mock:
             db_mock.side_effect = IntegrityError(None, None, None, None)
@@ -93,32 +84,23 @@ class TestStoreService(unittest.TestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_queue_succeeds_returns_200(self):
-        with mock.patch('server.publisher.cs.publish_message', return_value=True):
-            r = self.app.post(self.endpoints['responses'], data=test_message)
-            self.assertEqual(200, r.status_code)
-
-        db.session.remove()
-        db.drop_all()
-
     # /responses/<tx_id> GET
     def test_get_id_returns_404_if_not_stored(self):
         r = self.app.get(self.endpoints['responses'] + '/x')
         self.assertEqual(404, r.status_code)
 
     def test_get_valid_id_returns_id_and_200(self):
-        with mock.patch('server.publisher.cs.publish_message', return_value=True):
-            test_json = json.loads(updated_message)
-            expected_id = test_json['tx_id']
+        test_json = json.loads(updated_message)
+        expected_id = test_json['tx_id']
 
-            self.app.post(self.endpoints['responses'],
-                          data=updated_message,
-                          content_type='application/json')
+        self.app.post(self.endpoints['responses'],
+                      data=updated_message,
+                      content_type='application/json')
 
-            r = self.app.get(self.endpoints['responses'] + '/' + expected_id)
+        r = self.app.get(self.endpoints['responses'] + '/' + expected_id)
 
-            self.assertIsNotNone(r.data)
-            self.assertEqual(200, r.status_code)
+        self.assertIsNotNone(r.data)
+        self.assertEqual(200, r.status_code)
 
         db.session.remove()
         db.drop_all()
@@ -132,55 +114,23 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(400, r.status_code)
 
     def test_get_responses_per_page(self):
-        with mock.patch('server.publisher.cs.publish_message', return_value=True):
-            self.app.post(self.endpoints['responses'],
-                          data=updated_message,
-                          content_type='application/json')
 
-            self.app.post(self.endpoints['responses'],
-                          data=test_message,
-                          content_type='application/json')
+        self.app.post(self.endpoints['responses'],
+                      data=updated_message,
+                      content_type='application/json')
 
-            r = self.app.get(self.endpoints['responses'] + '?per_page=1')
-            page_count = len(json.loads(r.data.decode('utf8')))
-            total_count = json.loads(r.data.decode('utf8'))
-            self.assertEqual(page_count, 1)
-            self.assertGreaterEqual(len(total_count), page_count)
+        self.app.post(self.endpoints['responses'],
+                      data=test_message,
+                      content_type='application/json')
+
+        r = self.app.get(self.endpoints['responses'] + '?per_page=1')
+        page_count = len(json.loads(r.data.decode('utf8')))
+        total_count = json.loads(r.data.decode('utf8'))
+        self.assertEqual(page_count, 1)
+        self.assertGreaterEqual(len(total_count), page_count)
 
         db.session.remove()
         db.drop_all()
-
-    # /queue POST
-
-    def test_queue_fails_returns_500_queue_endpoint(self):
-        with mock.patch('server.do_get_response') as call_mock:
-            response = Response()
-            response.status_code = 200
-            response.response.append(test_message)
-            call_mock.return_value = response
-            with mock.patch('server.publisher.cs.publish_message', return_value=False):
-                r = self.app.post(self.endpoints['queue'], data=test_message)
-                self.assertEqual(500, r.status_code)
-
-    def test_queue_succeeds_returns_200_queue_endpoint(self):
-        with mock.patch('server.do_get_response') as call_mock:
-            response = Response()
-            response.status_code = 200
-            response.response.append(test_message)
-            call_mock.return_value = response
-            with mock.patch('server.publisher.cs.publish_message', return_value=True):
-                r = self.app.post(self.endpoints['queue'], data=test_message)
-                self.assertEqual(200, r.status_code)
-
-    def test_queue_missing_tx_id_returns_400(self):
-        with mock.patch('server.do_get_response') as call_mock:
-            response = Response()
-            response.status_code = 200
-            response.response.append(test_message)
-            call_mock.return_value = response
-            with mock.patch('server.publisher.cs.publish_message', return_value=True):
-                r = self.app.post(self.endpoints['queue'], data="")
-                self.assertEqual(400, r.status_code)
 
     # test ranges for params
     def test_min_range_per_page(self):
