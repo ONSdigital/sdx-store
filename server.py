@@ -298,7 +298,6 @@ def do_save_response():
         if invalid:
             return jsonify(invalid)
 
-        bound_logger.info("Notification published successfully")
     return jsonify(result="ok")
 
 
