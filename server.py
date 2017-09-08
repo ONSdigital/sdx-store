@@ -204,7 +204,7 @@ def save_response(bound_logger, survey_response):
 def save_feedback_response(bound_logger, survey_feedback_response):
     bound_logger.info("Saving feedback response")
     invalid = survey_feedback_response.get("invalid")
-    survey = survey_feedback_response.get("associated_survey")
+    survey = survey_feedback_response.get("survey_id")
     period = survey_feedback_response.get("collection", {}).get("period")
 
     feedback_response = FeedbackResponse(invalid=invalid,
@@ -265,9 +265,11 @@ def do_save_response():
                                 status_code=400,
                                 payload=request.args)
 
-    if survey_response.get('survey_id') == 'feedback':
+    response_type = str(survey_response.get('type'))
 
-        bound_logger = logger.bind(survey=survey_response.get("survey_type"),
+    if response_type.find("feedback") != -1:
+
+        bound_logger = logger.bind(response_type="feedback",
                                    survey_id=survey_response.get("survey_id"))
 
         try:
