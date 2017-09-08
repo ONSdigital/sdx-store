@@ -26,18 +26,27 @@ test_message = '''
 
 test_feedback_message = '''
  {
-   "invalid": false,
-   "origin": "uk.gov.ons.edc.eq",
-   "survey_id": "feedback",
-   "associated_survey": "RSI",
-   "submitted_at": "2016-03-12T10:39:40Z",
-   "satisfaction": "satisfied",
-   "comment": "comment",
+   "type" : "uk.gov.ons.edc.eq:feedback",
+   "origin" : "uk.gov.ons.edc.eq",
+   "metadata": {
+    "user_id": "789473423",
+    "ru_ref": "432423423423"
+   },
+   "data": {
+    "url": "https://eq.onsdigital.uk/feedback",
+    "name": "John Appleseed",
+    "email": "john.appleseed@ons.gov.uk",
+    "message": "Feedback message string"
+   },
+   "submitted_at": "2016-03-07T15:28:05Z",
    "collection": {
-    "exercise_sid": "hfjdskf",
-    "instrument_id": "1",
-    "period": "0616"
-    }
+    "instrument_id": "0203",
+    "exercise_sid": "739",
+    "period": "2016-02-01"
+   },
+   "survey_id": "023",
+   "tx_id": "0f534ffc-9442-414c-b39f-a756b4adc6cb",
+   "version" : "0.0.1"
  }
  '''
 
