@@ -298,7 +298,6 @@ def do_save_response():
         if invalid:
             return jsonify(invalid)
 
-        bound_logger.info("Notification published successfully")
     return jsonify(result="ok")
 
 
@@ -330,9 +329,11 @@ def do_get_response(tx_id):
         try:
             r = object_as_dict(result.items[0])['data']
             return jsonify(r)
+
         except IndexError as e:
             logger.error('Empty items list in result.', error=e)
             return jsonify({}), 404
+
     else:
         return jsonify({}), 404
 
