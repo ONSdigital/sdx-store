@@ -16,7 +16,7 @@ from werkzeug.exceptions import BadRequest
 import settings
 
 
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 
 logger_initial_config(service_name='sdx-store', log_level=settings.LOGGING_LEVEL)
 logger = wrap_logger(logging.getLogger(__name__))
