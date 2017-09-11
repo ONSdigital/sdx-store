@@ -4,7 +4,6 @@ ENV BUILD_PACKAGES="git curl build-essential python3-dev ca-certificates libssl-
 
 COPY server.py /app/server.py
 COPY settings.py /app/settings.py
-COPY queue_publisher.py /app/queue_publisher.py
 COPY requirements.txt /app/requirements.txt
 COPY startup.sh /app/startup.sh
 RUN mkdir -p /app/logs
