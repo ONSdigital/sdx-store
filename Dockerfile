@@ -1,4 +1,3 @@
-FROM ubuntu:16.04
 FROM onsdigital/flask-crypto-queue
 ENV RUNTIME_PACKAGES="python3"
 ENV BUILD_PACKAGES="git curl build-essential python3-dev ca-certificates libssl-dev libffi-dev postgresql libpq-dev"
@@ -15,8 +14,6 @@ EXPOSE 5000
 
 RUN apt-get update && apt-get install -y $RUNTIME_PACKAGES $BUILD_PACKAGES && curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
-RUN git clone https://github.com/ONSdigital/sdx-common.git
-RUN pip3 install ./sdx-common
 RUN pip3 install --no-cache-dir -U -r /app/requirements.txt
 
 ENTRYPOINT ./startup.sh
