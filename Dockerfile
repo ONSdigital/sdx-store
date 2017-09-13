@@ -1,4 +1,5 @@
 FROM ubuntu:16.04
+FROM onsdigital/flask-crypto-queue
 ENV RUNTIME_PACKAGES="python3"
 ENV BUILD_PACKAGES="git curl build-essential python3-dev ca-certificates libssl-dev libffi-dev postgresql libpq-dev"
 
