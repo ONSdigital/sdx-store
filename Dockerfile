@@ -6,6 +6,7 @@ COPY server.py /app/server.py
 COPY settings.py /app/settings.py
 COPY requirements.txt /app/requirements.txt
 COPY startup.sh /app/startup.sh
+COPY Makefile /app/Makefile
 RUN mkdir -p /app/logs
 
 # set working directory to /app/
@@ -14,6 +15,6 @@ EXPOSE 5000
 
 RUN apt-get update && apt-get install -y $RUNTIME_PACKAGES $BUILD_PACKAGES && curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
-RUN pip3 install --no-cache-dir -U -r /app/requirements.txt
+RUN make build
 
 ENTRYPOINT ./startup.sh
