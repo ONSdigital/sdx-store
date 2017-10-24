@@ -4,5 +4,6 @@ build:
 test:
 	pip3 install -r test_requirements.txt
 	flake8 --exclude lib
-	pytest -v --cov /server.py
+	pytest -v --cov server
+	coverage html
 
