@@ -16,12 +16,6 @@ Using virtualenv, create a new environment, then install dependencies using:
 make build
 ```
 
-To install using local sdx-common repo (requires SDX_HOME environment variable), use:
-
-```bash
-make dev
-```
-
 To run the test suite, use:
 
 ```bash
@@ -61,7 +55,6 @@ Some of important environment variables available for configuration are listed b
 
 | Environment Variable    | Example                               | Description
 |-------------------------|---------------------------------------|----------------
-| MONGODB_URL             | `mongodb://localhost:27017`           | Location of MongoDB
 | RABBIT_CS_QUEUE         | `sdx-cs-survey-notifications`         | Name of the Rabbit CS queue
 | RABBIT_CTP_QUEUE        | `sdx-ctp-survey-notifications`        | Name of the Rabbit CTP queue
 | RABBIT_CORA_QUEUE       | `sdx-cora-survey-notifications`       | Name of the Rabbit CORA queue
