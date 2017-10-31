@@ -1,0 +1,7 @@
+applications:
+- name: sdx-store
+  buildpack: python_buildpack
+  health-check-type: process
+
+  services:
+   - sdx-postgres-dev

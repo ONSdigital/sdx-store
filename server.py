@@ -115,6 +115,8 @@ def create_tables():
     logger.info("Creating tables")
     db.create_all()
 
+create_tables()
+
 
 def get_responses(tx_id=None, invalid=None):
     try:
