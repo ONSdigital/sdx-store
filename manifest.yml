@@ -3,5 +3,8 @@ applications:
   buildpack: python_buildpack
   health-check-type: process
 
+  env:
+    CF_DEPLOYMENT: True
+
   services:
    - sdx-postgres-dev
