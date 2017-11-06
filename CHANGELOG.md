@@ -1,6 +1,7 @@
 ### Unreleased
  - Removed SDX common clone in docker
  - Begin using PyTest as default test runner
+ - Add Cloudfoundry deployment files
 
 ### 3.0.0 2017-09-11
   - Ensure integrity and version of library dependencies
