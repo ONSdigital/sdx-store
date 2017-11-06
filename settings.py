@@ -3,6 +3,7 @@ import logging
 
 
 LOGGING_LEVEL = logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG'))
+LOGGING_FORMAT = "%(asctime)s.%(msecs)06dZ|%(levelname)s: sdx-store: %(message)s"
 
 DB_HOST = os.getenv('SDX_STORE_POSTGRES_HOST', '0.0.0.0')
 DB_PORT = os.getenv('SDX_STORE_POSTGRES_PORT', '5432')
