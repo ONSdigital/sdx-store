@@ -116,7 +116,7 @@ def create_tables():
     db.create_all()
 
 
-if os.getenv("CF_DEPLOYMENT", False):
+if os.getenv("CREATE_TABLES", False):
     create_tables()
 
 

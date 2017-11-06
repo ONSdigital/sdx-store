@@ -5,6 +5,7 @@ applications:
 
   env:
     CF_DEPLOYMENT: True
+    CREATE_TABLES: True
 
   services:
    - sdx-postgres-dev
