@@ -118,6 +118,10 @@ def create_tables():
     db.create_all()
 
 
+if os.getenv("CREATE_TABLES", False):
+    create_tables()
+
+
 def get_responses(tx_id=None, invalid=None):
     try:
         schema(request.args)
