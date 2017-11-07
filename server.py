@@ -1,11 +1,10 @@
 from datetime import datetime
 import json
-import logging.handlers
+import logging
 import os
 
 from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
-from sdx.common.logger_config import logger_initial_config
 from sqlalchemy import inspect, select, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -18,7 +17,10 @@ import settings
 
 __version__ = "3.0.0"
 
-logger_initial_config(service_name='sdx-store', log_level=settings.LOGGING_LEVEL)
+logging.basicConfig(format=settings.LOGGING_FORMAT,
+                    datefmt="%Y-%m-%dT%H:%M:%S",
+                    level=settings.LOGGING_LEVEL)
+
 logger = wrap_logger(logging.getLogger(__name__))
 
 app = Flask(__name__)

@@ -42,9 +42,6 @@ psycopg2==2.7.1 \
 structlog==16.1.0 \
     --hash=sha256:a8cc45c208c6b251031ec223940552eccd97dbdb322474e0c4ec9e50f76a225a \
     --hash=sha256:b44dfaadcbab84e6bb97bd9b263f61534a79611014679757cd93e2359ee7be01
-sdx-common==1.0.2 \
-    --hash=sha256:e9ea578a37028e0c2e65d59239e43ea63070f75ca986bdc91e6874da944ce077 \
-    --hash=sha256:28d808ab472d9f4f3a67e66d7e0f9821a93d271cac9bf414fe9d469b70e6735c
 voluptuous==0.9.3 \
     --hash=sha256:ed5a11fda273754caabb6becd5fe172ee2621cd2c8ff8279433173bb7b0ec568
 cryptography==1.7.1 \

@@ -4,6 +4,7 @@ import json
 
 
 LOGGING_LEVEL = logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG'))
+LOGGING_FORMAT = "%(asctime)s.%(msecs)06dZ|%(levelname)s: sdx-store: %(message)s"
 
 if os.getenv("CF_DEPLOYMENT", False):
     vcap_services = os.getenv("VCAP_SERVICES")
