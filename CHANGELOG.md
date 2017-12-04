@@ -1,10 +1,11 @@
 ### Unreleased
+  - Add /info healthcheck endpoint
 
 ### 3.1.0 2017-11-21
- - Removed SDX common clone in docker
- - Begin using PyTest as default test runner
- - Add Cloudfoundry deployment files
- - Remove sdx-common logging
+  - Removed SDX common clone in docker
+  - Begin using PyTest as default test runner
+  - Add Cloudfoundry deployment files
+  - Remove sdx-common logging
 
 ### 3.0.0 2017-09-11
   - Ensure integrity and version of library dependencies
