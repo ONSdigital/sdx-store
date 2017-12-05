@@ -1,7 +1,8 @@
 applications:
 - name: sdx-store
   buildpack: python_buildpack
-  health-check-type: process
+  health-check-http-endpoint: /info
+  health-check-type: http
 
   env:
     CF_DEPLOYMENT: True

@@ -346,6 +346,7 @@ def do_get_response(tx_id):
         return jsonify({}), 404
 
 
+@app.route('/info', methods=['GET'])
 @app.route('/healthcheck', methods=['GET'])
 def healthcheck():
     try:
