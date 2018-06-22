@@ -12,6 +12,9 @@ from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 
+
+from flask import Response
+
 import settings
 
 
@@ -359,6 +362,94 @@ def healthcheck():
     else:
         return jsonify({'status': 'OK'})
 
+
+def get_all_comments(survey_id):
+    #collect survey based on survey id and and 146 code
+
+    db.engine.echo = True
+    #connection = db.engine.connect()
+
+  #  response = db.session.query(SurveyResponse).\
+  #     filter(SurveyResponse.data[('survey_id')].astext == '023').all()
+
+
+    #responses.query.filter(responses.data.is_('data').filter(responses.survey_id.is_('146')
+
+    #records = db.session.query(SurveyResponse).filter(SurveyResponse.data) -> 'survey_id' == "023").all()
+
+
+    #First attempt in SqlAlchemy
+    records = db.session.query(SurveyResponse).filter(SurveyResponse.data['survey_id'].astext == "023").all()
+
+    #Second attempt using a raw query.
+    #result = connection.execute("select data from responses")
+
+    result = db.session.execute("SELECT data from responses where data -> 'data' ? '146' and data ->>'survey_id' = '023';")
+
+    # sql = text("SELECT data from responses where data-> 'data' ? '146' and data ->>'survey_id' = '023'")
+
+    # result = db.engine.execute(sql)
+
+    # result = db.session.query("select data from responses where data-> 'data' ? '146'"
+    #                            " and data ->>'survey_id' = %s", survey_id).all()
+    print(result['data'])
+
+    return result
+
+    #row2dict = lambda r: {c.name: str(getattr(r, c.name)) for c in r.__table__.columns}
+
+
+
+# def export_view():
+#     #########################
+#     # Code for creating Flask
+#     # response
+#     #########################
+#     response = Response()
+#     response.status_code = 200
+#
+#
+#
+#     workbook = xlwt.Workbook()
+#
+#
+#     output = io.IStringIO.StringIO()
+#     workbook.save(output)
+#     response.data = output.getvalue()
+#
+#     #################################
+#     filename = 'comments.xls'
+#     mimetype_tuple = mimetypes.guess_type(filename)
+#
+#     #HTTP headers for forcing file download
+#     response_headers = Headers({
+#             'Pragma': "public",  # required,
+#             'Expires': '0',
+#             'Cache-Control': 'must-revalidate, post-check=0, pre-check=0',
+#             'Cache-Control': 'private',  # required for certain browsers,
+#             'Content-Type': mimetype_tuple[0],
+#             'Content-Disposition': 'attachment; filename=\"%s\";' % filename,
+#             'Content-Transfer-Encoding': 'binary',
+#             'Content-Length': len(response.data)
+#         })
+#
+#     if not mimetype_tuple[1] is None:
+#         response.update({
+#                 'Content-Encoding': mimetype_tuple[1]
+#             })
+#
+#     response.headers = response_headers
+#
+#     response.set_cookie('fileDownload', 'true', path='/')
+#
+#     return response
+
+
+
+
+@app.route('/comments', methods=['GET'])
+def get_comments():
+    return get_all_comments('023')
 
 if __name__ == '__main__':
     # Startup
