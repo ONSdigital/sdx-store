@@ -1,22 +1,26 @@
-from datetime import datetime
+import time
+
+import StringIO
 import json
 import logging
+import mimetypes
 import os
+from datetime import datetime
+from wsgiref.headers import Headers
 
-from flask import jsonify, Flask, Response, request
+from flask import Flask, Response, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import inspect, select, Integer, String
+from sqlalchemy import Integer, String, inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
+from openpyxl import Workbook
+from io import BytesIO
 
-
-from flask import Response
-
+import exporter
 import settings
-
 
 __version__ = "3.2.0"
 
@@ -123,6 +127,11 @@ def create_tables():
 
 if os.getenv("CREATE_TABLES", False):
     create_tables()
+
+
+def validate_response_data():
+    # validator = threading.Thread(target=)
+    pass
 
 
 def get_responses(tx_id=None, invalid=None):
@@ -363,93 +372,85 @@ def healthcheck():
         return jsonify({'status': 'OK'})
 
 
-def get_all_comments(survey_id):
-    #collect survey based on survey id and and 146 code
+def get_all_comments_by_survey_id(survey_id):
+    # collect survey based on survey id and and 146 code
 
     db.engine.echo = True
-    #connection = db.engine.connect()
+    max_surveys = 10
 
-  #  response = db.session.query(SurveyResponse).\
-  #     filter(SurveyResponse.data[('survey_id')].astext == '023').all()
-
-
-    #responses.query.filter(responses.data.is_('data').filter(responses.survey_id.is_('146')
-
-    #records = db.session.query(SurveyResponse).filter(SurveyResponse.data) -> 'survey_id' == "023").all()
-
-
-    #First attempt in SqlAlchemy
-    records = db.session.query(SurveyResponse).filter(SurveyResponse.data['survey_id'].astext == "023").all()
-
-    #Second attempt using a raw query.
-    #result = connection.execute("select data from responses")
-
-    result = db.session.execute("SELECT data from responses where data -> 'data' ? '146' and data ->>'survey_id' = '023';")
-
-    # sql = text("SELECT data from responses where data-> 'data' ? '146' and data ->>'survey_id' = '023'")
-
-    # result = db.engine.execute(sql)
-
-    # result = db.session.query("select data from responses where data-> 'data' ? '146'"
-    #                            " and data ->>'survey_id' = %s", survey_id).all()
-    print(result['data'])
-
-    return result
-
-    #row2dict = lambda r: {c.name: str(getattr(r, c.name)) for c in r.__table__.columns}
+    # retrieve all the records
+    comments = list()
+    sliced_value = 0
+    while True:
+        survey_records_page = db.session.query(SurveyResponse).slice(sliced_value, max_surveys).all()
+        if not survey_records_page or len(survey_records_page) == 0:
+            break
+        for data in survey_records_page:
+            record = json.loads(data.data)
+            if '146' in record['data']:
+                if survey_id in record['survey_id']:
+                    comments.append((record['survey_id'], record['data']['146']))
+        sliced_value = len(survey_records_page)
+    return comments
 
 
+@app.route('/comments/<str:survey_id>', methods=['GET'])
+def get_comments(survey_id):
+    if survey_id is None:
+        return server_error(400)
 
-# def export_view():
-#     #########################
-#     # Code for creating Flask
-#     # response
-#     #########################
-#     response = Response()
-#     response.status_code = 200
-#
-#
-#
-#     workbook = xlwt.Workbook()
-#
-#
-#     output = io.IStringIO.StringIO()
-#     workbook.save(output)
-#     response.data = output.getvalue()
-#
-#     #################################
-#     filename = 'comments.xls'
-#     mimetype_tuple = mimetypes.guess_type(filename)
-#
-#     #HTTP headers for forcing file download
-#     response_headers = Headers({
-#             'Pragma': "public",  # required,
-#             'Expires': '0',
-#             'Cache-Control': 'must-revalidate, post-check=0, pre-check=0',
-#             'Cache-Control': 'private',  # required for certain browsers,
-#             'Content-Type': mimetype_tuple[0],
-#             'Content-Disposition': 'attachment; filename=\"%s\";' % filename,
-#             'Content-Transfer-Encoding': 'binary',
-#             'Content-Length': len(response.data)
-#         })
-#
-#     if not mimetype_tuple[1] is None:
-#         response.update({
-#                 'Content-Encoding': mimetype_tuple[1]
-#             })
-#
-#     response.headers = response_headers
-#
-#     response.set_cookie('fileDownload', 'true', path='/')
-#
-#     return response
+    logger.info("Exporting comments for survey id ", survey_id)
+    workbook = exporter.create_comments_book(survey_id, get_all_comments_by_survey_id(survey_id))
+    return export_comments(workbook)
 
 
+def export_comments(workbook: Workbook) -> Response:
+    output = Response(mimetype='application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    file_name = "comments_" + "".join(time.strftime("%Y%m%d-%H%M%S")) + ".xlsx"
+    output['Content-Disposition'] = 'attachment; filename=' + file_name
+    workbook.save(output)
+    return output
 
+def export_view(workbook: Workbook) -> Response:
+    #########################
+    # Code for creating Flask
+    # response
+    #########################
+    response = Response()
+    response.status_code = 200
 
-@app.route('/comments', methods=['GET'])
-def get_comments():
-    return get_all_comments('023')
+    output = StringIO()
+    workbook.save(output)
+    response.data = output.getvalue()
+
+    #################################
+    filename = "comments_" + "".join(time.strftime("%Y%m%d-%H%M%S")) + ".xlsx"
+
+    mimetype_tuple = mimetypes.guess_type(filename)
+
+    #HTTP headers for forcing file download
+    response_headers = Headers({
+            'Pragma': "public",  # required,
+            'Expires': '0',
+            'Cache-Control': 'must-revalidate, post-check=0, pre-check=0',
+            'Cache-Control': 'private',  # required for certain browsers,
+            'Content-Type': mimetype_tuple[0],
+            'Content-Disposition': 'attachment; filename=\"%s\";' % filename,
+            'Content-Transfer-Encoding': 'binary',
+            'Content-Length': len(response.data)
+        })
+
+    if not mimetype_tuple[1] is None:
+        response.update({
+                'Content-Encoding': mimetype_tuple[1]
+            })
+
+    response.headers = response_headers
+
+    response.set_cookie('fileDownload', 'true', path='/')
+
+    return response
+
 
 if __name__ == '__main__':
     # Startup

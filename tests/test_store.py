@@ -1,18 +1,21 @@
 import json
 import logging
+import os
 import unittest
+import random
 
 import mock
 from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
+import exporter
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
 from tests.test_data import test_feedback_message, invalid_feedback_message
 
 import server
 from server import db, InvalidUsageError, logger
-
+from contextlib import contextmanager
 
 @testing.postgresql.skipIfNotInstalled
 class TestStoreService(unittest.TestCase):
@@ -34,23 +37,54 @@ class TestStoreService(unittest.TestCase):
         server.create_tables()
 
     def tearDown(self):
-         db.session.remove()
-         db.drop_all()
+        db.session.remove()
+        db.drop_all()
 
-    def test_get_comments_retrieve_all_comments_survey_id(self):
+    def test_get_comments_retrieve_a_comment_and_generate_excel(self):
         survey_response = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
                                                 TestStoreService.create_test_data(1, '023'))
-
-        # survey_response_2 = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
-        #                                         TestStoreService.create_test_data(1, '024'))
-
         db.session.add(survey_response)
         db.session.commit()
-        self.assertEqual(len(server.get_all_comments('023')), 1)
+        db.session.flush()
+        result = server.get_all_comments_by_survey_id('023')
+
+        exporter.create_comments_book('023', result)
+
+
+    def test_get_comments_retrieve_a_comment_by_survey_id(self):
+        survey_response = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
+                                                TestStoreService.create_test_data(1, '023'))
+        db.session.add(survey_response)
+        db.session.commit()
+        db.session.flush()
+
+        for i in range(1, 20):
+            tx_id = ''.join(random.choice('0123456789abcdef') for x in range(32))
+
+            response = server.SurveyResponse(tx_id=tx_id,
+                                             invalid=False,
+                                             data=TestStoreService.create_test_data(i, '024'))
+            db.session.add(response)
+            db.session.commit()
+            db.session.flush()
+
+        self.assertEqual(len(server.get_all_comments_by_survey_id('023')), 1)
+
+    def test_get_comments_retrieve_no_comment_by_survey_id(self):
+        survey_response = server.SurveyResponse(''.join(random.choice('0123456789abcdef') for i in range(32)), False,
+                                                TestStoreService.create_no_comment_test_data(1, '023'))
+        server.merge(survey_response)
+
+        for i in range(1, 11):
+            response = server.SurveyResponse(tx_id="0d51ca67-98d9-4ae9-9187-2887f24c0a1f",
+                                             invalid=False,
+                                             data=TestStoreService.create_test_data(i, '024'))
+            server.merge(response)
+
+        self.assertEqual(len(server.get_all_comments_by_survey_id('023')), 0)
 
     def test_get_comments_retrieve_no_comments_survey_id(self):
-        self.assertEqual(len(server.get_all_comments('023')), 0)
-
+        self.assertEqual(len(server.get_all_comments_by_survey_id('023')), 0)
 
     # /responses POST
     def test_empty_post_request(self):
@@ -129,7 +163,6 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(400, r.status_code)
 
     def test_get_responses_per_page(self):
-
         self.app.post(self.endpoints['responses'],
                       data=updated_message,
                       content_type='application/json')
@@ -178,46 +211,63 @@ class TestStoreService(unittest.TestCase):
     def create_test_data(number: 1, survey_id):
         test_data = json.dumps(
             {
-            "data":{
-                  "11":"1/4/2016",
-                  "12":"31/10/2016",
-                  "20":"1800000",
-                  "21":"60000",
-                  "22":"705000",
-                  "23":"900",
-                  "24":"74",
-                  "25":"50",
-                  "26":"100",
-                  "27":"7400",
-                  "50":"205",
-                  "51":"84",
-                  "52":"10",
-                  "53":"73",
-                  "54":"24",
-                  "146":"Change comments included",
-                  "146a":"Yes",
-                  "146b":"In-store / online promotions",
-                  "146c":"Special events (e.g. sporting events)",
-                  "146d":"Calendar events (e.g. Christmas, Easter, Bank Holiday)",
-                  "146e":"Weather",
-                  "146f":"Store closures",
-                  "146g":"Store openings",
-                  "146h":"Other"
-               },
-               "type":"uk.gov.ons.edc.eq:surveyresponse",
-               "tx_id": "f088d89d-a367-876e-f29f-ae8f1a26" + str(number),
-               "origin":"uk.gov.ons.edc.eq",
-               "version":"0.0.1",
-               "metadata":{
-                  "ru_ref":"12345678901A",
-                  "user_id":"789473423"
-               },
-               "survey_id": survey_id,
-               "collection":{
-                  "period":"1604",
-                  "exercise_sid":"hfjdskf",
-                  "instrument_id":"0215"
-               },
-                "submitted_at":"2016-03-12T10:39:40Z"
+                "data": {
+                    "146": "Change comments included",
+                    "146a": "Yes",
+                    "146b": "In-store / online promotions",
+                    "146c": "Special events (e.g. sporting events)",
+                    "146d": "Calendar events (e.g. Christmas, Easter, Bank Holiday)",
+                    "146e": "Weather",
+                    "146f": "Store closures",
+                    "146g": "Store openings",
+                    "146h": "Other"
+                },
+                "type": "uk.gov.ons.edc.eq:surveyresponse",
+                "tx_id": "f088d89d-a367-876e-f29f-ae8f1a26" + str(number),
+                "origin": "uk.gov.ons.edc.eq",
+                "version": "0.0.1",
+                "metadata": {
+                    "ru_ref": "12345678901A",
+                    "user_id": "789473423"
+                },
+                "survey_id": survey_id,
+                "collection": {
+                    "period": "1604",
+                    "exercise_sid": "hfjdskf",
+                    "instrument_id": "0215"
+                },
+                "submitted_at": "2016-03-12T10:39:40Z"
+            })
+        return test_data
+
+    @staticmethod
+    def create_no_comment_test_data(number: 1, survey_id):
+        test_data = json.dumps(
+            {
+                "data": {
+                    "146a": "Yes",
+                    "146b": "In-store / online promotions",
+                    "146c": "Special events (e.g. sporting events)",
+                    "146d": "Calendar events (e.g. Christmas, Easter, Bank Holiday)",
+                    "146e": "Weather",
+                    "146f": "Store closures",
+                    "146g": "Store openings",
+                    "146h": "Other"
+                },
+                "type": "uk.gov.ons.edc.eq:surveyresponse",
+                "tx_id": "f088d89d-a367-876e-f29f-ae8f1a26" + str(number),
+                "origin": "uk.gov.ons.edc.eq",
+                "version": "0.0.1",
+                "metadata": {
+                    "ru_ref": "12345678901A",
+                    "user_id": "789473423"
+                },
+                "survey_id": survey_id,
+                "collection": {
+                    "period": "1604",
+                    "exercise_sid": "hfjdskf",
+                    "instrument_id": "0215"
+                },
+                "submitted_at": "2016-03-12T10:39:40Z"
             })
         return test_data
