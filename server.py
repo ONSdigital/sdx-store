@@ -1,6 +1,5 @@
 import time
 
-import StringIO
 import json
 import logging
 import mimetypes
@@ -17,7 +16,7 @@ from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 from openpyxl import Workbook
-from io import BytesIO
+from io import StringIO
 
 import exporter
 import settings
@@ -394,9 +393,13 @@ def get_all_comments_by_survey_id(survey_id):
     return comments
 
 
-@app.route('/comments/<str:survey_id>', methods=['GET'])
+@app.route('/comments/<string:survey_id>', methods=['GET'])
 def get_comments(survey_id):
+    logger.info("Exporting comments for survey id " + survey_id)
+
     if survey_id is None:
+        logger.error("Exporting comments for survey id " + survey_id)
+
         return server_error(400)
 
     logger.info("Exporting comments for survey id ", survey_id)
