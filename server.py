@@ -1,11 +1,8 @@
-import time
 
 import json
 import logging
-import mimetypes
 import os
 from datetime import datetime
-from wsgiref.headers import Headers
 
 from flask import Flask, Response, jsonify, request, send_file
 from flask_sqlalchemy import SQLAlchemy
@@ -15,8 +12,6 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
-from openpyxl import Workbook
-from io import StringIO
 
 import exporter
 import settings
