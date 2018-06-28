@@ -381,7 +381,7 @@ def get_all_comments_by_survey_id(survey_id):
             break
 
         for data in survey_records_page:
-            logger.debug("Data data : " + str(data.data))
+            logger.debug(data.data)
             record = json.loads(data.data)
             if '146' in record['data']:
                 if survey_id in record['survey_id']:
@@ -403,7 +403,7 @@ def get_comments(survey_id):
     try:
         workbook = exporter.create_comments_book(survey_id, get_all_comments_by_survey_id(survey_id))
     except Exception as e:
-        logger.error("File generation went wrong ")
+        logger.error("File generation went wrong ", error=e)
         return server_error(500)
 
     return send_file(workbook.path, as_attachment=True)

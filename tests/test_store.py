@@ -39,23 +39,20 @@ class TestStoreService(unittest.TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
-        self.postgresql.stop()
-
-    def test_excel_creation(self):
-        result = {"023":"comment"}
-        file = exporter.create_comments_book('023', result)
-        assert (os.path.isfile(file), True)
-
 
     def test_get_comments_retrieve_a_comment_and_generate_excel(self):
         survey_response = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
-                                                TestStoreService.create_test_data(1, '023'))
+                                                TestStoreService.create_test_data(1, "023"))
         db.session.add(survey_response)
         db.session.commit()
         db.session.flush()
         result = server.get_all_comments_by_survey_id('023')
 
-        exporter.create_comments_book('023', result)
+        workbook_file_name = exporter.create_comments_book('023', result)
+
+        self.assertEqual(os.path.isfile(workbook_file_name), True)
+
+        os.remove(workbook_file_name)
 
     def test_get_comments_retrieve_a_comment_by_survey_id(self):
         survey_response = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
@@ -217,32 +214,32 @@ class TestStoreService(unittest.TestCase):
     def create_test_data(number: 1, survey_id):
         test_data = json.dumps(
             {
-                "data": {
-                    "146": "Change comments included",
-                    "146a": "Yes",
-                    "146b": "In-store / online promotions",
-                    "146c": "Special events (e.g. sporting events)",
-                    "146d": "Calendar events (e.g. Christmas, Easter, Bank Holiday)",
-                    "146e": "Weather",
-                    "146f": "Store closures",
-                    "146g": "Store openings",
-                    "146h": "Other"
+                'data': {
+                    '146': 'Change comments included',
+                    '146a': 'Yes',
+                    '146b': 'In-store / online promotions',
+                    '146c': 'Special events (e.g. sporting events)',
+                    '146d': 'Calendar events (e.g. Christmas, Easter, Bank Holiday)',
+                    '146e': 'Weather',
+                    '146f': 'Store closures',
+                    '146g': 'Store openings',
+                    '146h': 'Other'
                 },
-                "type": "uk.gov.ons.edc.eq:surveyresponse",
-                "tx_id": "f088d89d-a367-876e-f29f-ae8f1a26" + str(number),
-                "origin": "uk.gov.ons.edc.eq",
-                "version": "0.0.1",
-                "metadata": {
-                    "ru_ref": "12345678901A",
-                    "user_id": "789473423"
+                'type': 'uk.gov.ons.edc.eq:surveyresponse',
+                'tx_id': 'f088d89d-a367-876e-f29f-ae8f1a26' + str(number),
+                'origin': 'uk.gov.ons.edc.eq',
+                'version': '0.0.1',
+                'metadata': {
+                    'ru_ref': '12345678901A',
+                    'user_id': '789473423'
                 },
-                "survey_id": survey_id,
-                "collection": {
-                    "period": "1604",
-                    "exercise_sid": "hfjdskf",
-                    "instrument_id": "0215"
+                'survey_id': survey_id,
+                'collection': {
+                    'period': '1604',
+                    'exercise_sid': 'hfjdskf',
+                    'instrument_id': '0215'
                 },
-                "submitted_at": "2016-03-12T10:39:40Z"
+                'submitted_at': '2016-03-12T10:39:40Z'
             })
         return test_data
 
@@ -250,30 +247,61 @@ class TestStoreService(unittest.TestCase):
     def create_no_comment_test_data(number: 1, survey_id):
         test_data = json.dumps(
             {
-                "data": {
-                    "146a": "Yes",
-                    "146b": "In-store / online promotions",
-                    "146c": "Special events (e.g. sporting events)",
-                    "146d": "Calendar events (e.g. Christmas, Easter, Bank Holiday)",
-                    "146e": "Weather",
-                    "146f": "Store closures",
-                    "146g": "Store openings",
-                    "146h": "Other"
+                'data': {
+                    '146a': 'Yes',
+                    '146b': 'In-store / online promotions',
+                    '146c': 'Special events (e.g. sporting events)',
+                    '146d': 'Calendar events (e.g. Christmas, Easter, Bank Holiday)',
+                    '146e': 'Weather',
+                    '146f': 'Store closures',
+                    '146g': 'Store openings',
+                    '146h': 'Other'
                 },
-                "type": "uk.gov.ons.edc.eq:surveyresponse",
-                "tx_id": "f088d89d-a367-876e-f29f-ae8f1a26" + str(number),
-                "origin": "uk.gov.ons.edc.eq",
-                "version": "0.0.1",
-                "metadata": {
-                    "ru_ref": "12345678901A",
-                    "user_id": "789473423"
+                'type': 'uk.gov.ons.edc.eq:surveyresponse',
+                'tx_id': 'f088d89d-a367-876e-f29f-ae8f1a26' + str(number),
+                'origin': 'uk.gov.ons.edc.eq',
+                'version': '0.0.1',
+                'metadata': {
+                    'ru_ref': '12345678901A',
+                    'user_id': '789473423'
                 },
-                "survey_id": survey_id,
-                "collection": {
-                    "period": "1604",
-                    "exercise_sid": "hfjdskf",
-                    "instrument_id": "0215"
+                'survey_id': survey_id,
+                'collection': {
+                    'period': '1604',
+                    'exercise_sid': 'hfjdskf',
+                    'instrument_id': '0215'
                 },
-                "submitted_at": "2016-03-12T10:39:40Z"
+                'submitted_at': '2016-03-12T10:39:40Z'
             })
         return test_data
+
+    @staticmethod
+    def create_str_comments():
+        return json.loads(
+            {
+                'data': {
+                    '146a': 'Yes',
+                    '146b': 'In-store / online promotions',
+                    '146c': 'Special events (e.g. sporting events)',
+                    '146d': 'Calendar events (e.g. Christmas, Easter, Bank Holiday)',
+                    '146e': 'Weather',
+                    '146f': 'Store closures',
+                    '146g': 'Store openings',
+                    '146h': 'Other'
+                },
+                'type': 'uk.gov.ons.edc.eq:surveyresponse',
+                'tx_id': 'f088d89d-a367-876e-f29f-ae8f1a26',
+                'origin': 'uk.gov.ons.edc.eq',
+                'version': '0.0.1',
+                'metadata': {
+                    'ru_ref': '12345678901A',
+                    'user_id': '789473423'
+                },
+                'survey_id': '023',
+                'collection': {
+                    'period': '1604',
+                    'exercise_sid': 'hfjdskf',
+                    'instrument_id': '0215'
+                },
+                'submitted_at': '2016-03-12T10:39:40Z'
+            })
