@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 from wsgiref.headers import Headers
 
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, jsonify, request, send_file
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -387,7 +387,7 @@ def get_all_comments_by_survey_id(survey_id):
 
         for data in survey_records_page:
             logger.debug("Data data : " + str(data.data))
-            record = json.loads(str(data.data))
+            record = json.loads(data.data)
             if '146' in record['data']:
                 if survey_id in record['survey_id']:
                     comments.append((record['survey_id'], record['data']['146']))
@@ -405,56 +405,13 @@ def get_comments(survey_id):
         return server_error(400)
 
     logger.info("Exporting comments for survey id " + survey_id)
-    workbook = exporter.create_comments_book(survey_id, get_all_comments_by_survey_id(survey_id))
-    return export_comments(workbook)
+    try:
+        workbook = exporter.create_comments_book(survey_id, get_all_comments_by_survey_id(survey_id))
+    except Exception as e:
+        logger.error("File generation went wrong ")
+        return server_error(500)
 
-
-def export_comments(workbook: Workbook) -> Response:
-    output = Response(mimetype='application/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    file_name = "comments_" + "".join(time.strftime("%Y%m%d-%H%M%S")) + ".xlsx"
-    output['Content-Disposition'] = 'attachment; filename=' + file_name
-    workbook.save(output)
-    return output
-
-def export_view(workbook: Workbook) -> Response:
-    #########################
-    # Code for creating Flask
-    # response
-    #########################
-    response = Response()
-    response.status_code = 200
-
-    output = StringIO()
-    workbook.save(output)
-    response.data = output.getvalue()
-
-    #################################
-    filename = "comments_" + "".join(time.strftime("%Y%m%d-%H%M%S")) + ".xlsx"
-
-    mimetype_tuple = mimetypes.guess_type(filename)
-
-    #HTTP headers for forcing file download
-    response_headers = Headers({
-            'Pragma': "public",  # required,
-            'Expires': '0',
-            'Cache-Control': 'must-revalidate, post-check=0, pre-check=0',
-            'Cache-Control': 'private',  # required for certain browsers,
-            'Content-Type': mimetype_tuple[0],
-            'Content-Disposition': 'attachment; filename=\"%s\";' % filename,
-            'Content-Transfer-Encoding': 'binary',
-            'Content-Length': len(response.data)
-        })
-
-    if not mimetype_tuple[1] is None:
-        response.update({
-                'Content-Encoding': mimetype_tuple[1]
-            })
-
-    response.headers = response_headers
-
-    response.set_cookie('fileDownload', 'true', path='/')
-
-    return response
+    return send_file(workbook.path, as_attachment=True)
 
 
 if __name__ == '__main__':

@@ -13,4 +13,6 @@ def create_comments_book(survey_id: str, comments: List) -> Workbook:
         row += 1
         ws.cell(row, 1, comment[1])
 
+    wb.save("comments_" + "".join(time.strftime("%Y%m%d-%H%M%S")) + ".xsl")
+
     return wb

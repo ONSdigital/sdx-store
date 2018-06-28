@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import unittest
 import random
 
@@ -15,7 +14,7 @@ from tests.test_data import test_feedback_message, invalid_feedback_message
 
 import server
 from server import db, InvalidUsageError, logger
-from contextlib import contextmanager
+
 
 @testing.postgresql.skipIfNotInstalled
 class TestStoreService(unittest.TestCase):
@@ -49,7 +48,6 @@ class TestStoreService(unittest.TestCase):
         result = server.get_all_comments_by_survey_id('023')
 
         exporter.create_comments_book('023', result)
-
 
     def test_get_comments_retrieve_a_comment_by_survey_id(self):
         survey_response = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
