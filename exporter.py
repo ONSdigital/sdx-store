@@ -3,7 +3,6 @@ import os
 from openpyxl import Workbook
 from typing import List
 import time
-import getpass
 
 from server import app
 

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import unittest
 import random
 
@@ -38,6 +39,13 @@ class TestStoreService(unittest.TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+        self.postgresql.stop()
+
+    def test_excel_creation(self):
+        result = {"023":"comment"}
+        file = exporter.create_comments_book('023', result)
+        assert (os.path.isfile(file), True)
+
 
     def test_get_comments_retrieve_a_comment_and_generate_excel(self):
         survey_response = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
