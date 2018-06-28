@@ -384,12 +384,15 @@ def get_all_comments_by_survey_id(survey_id):
         survey_records_page = db.session.query(SurveyResponse).slice(sliced_value, max_surveys).all()
         if not survey_records_page or len(survey_records_page) == 0:
             break
+
         for data in survey_records_page:
-            record = json.loads(data.data)
+            logger.debug("Data data : " + str(data.data))
+            record = json.loads(str(data.data))
             if '146' in record['data']:
                 if survey_id in record['survey_id']:
                     comments.append((record['survey_id'], record['data']['146']))
         sliced_value = len(survey_records_page)
+    logger.info("Comments retrieved " + str(len(comments)))
     return comments
 
 
@@ -398,11 +401,10 @@ def get_comments(survey_id):
     logger.info("Exporting comments for survey id " + survey_id)
 
     if survey_id is None:
-        logger.error("Exporting comments for survey id " + survey_id)
-
+        logger.error("Survey_id is none : " + survey_id)
         return server_error(400)
 
-    logger.info("Exporting comments for survey id ", survey_id)
+    logger.info("Exporting comments for survey id " + survey_id)
     workbook = exporter.create_comments_book(survey_id, get_all_comments_by_survey_id(survey_id))
     return export_comments(workbook)
 
