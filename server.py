@@ -123,11 +123,6 @@ if os.getenv("CREATE_TABLES", False):
     create_tables()
 
 
-def validate_response_data():
-    # validator = threading.Thread(target=)
-    pass
-
-
 def get_responses(tx_id=None, invalid=None):
     try:
         schema(request.args)
@@ -369,26 +364,9 @@ def healthcheck():
 def get_all_comments_by_survey_id(survey_id):
     # collect survey based on survey id and and 146 code
 
-    db.engine.echo = True
-    max_surveys = 10
-
-    # retrieve all the records
-    comments = list()
-    sliced_value = 0
-    while True:
-        survey_records_page = db.session.query(SurveyResponse).slice(sliced_value, max_surveys).all()
-        if not survey_records_page or len(survey_records_page) == 0:
-            break
-
-        for data in survey_records_page:
-            logger.debug(data.data)
-            record = json.loads(data.data)
-            if '146' in record['data']:
-                if survey_id in record['survey_id']:
-                    comments.append((record['survey_id'], record['data']['146']))
-        sliced_value = len(survey_records_page)
-    logger.info("Comments retrieved " + str(len(comments)))
-    return comments
+    records = db.session.query(SurveyResponse).filter(SurveyResponse.data['survey_id'].astext == survey_id).all()
+    logger.info("Comments retrieved " + str(len(records)))
+    return records
 
 
 @app.route('/comments/<string:survey_id>', methods=['GET'])
@@ -401,12 +379,17 @@ def get_comments(survey_id):
 
     logger.info("Exporting comments for survey id " + survey_id)
     try:
+        comments = get_all_comments_by_survey_id(survey_id)
+
+        if not comments or len(comments) == 0:
+            return jsonify({'No comments to export for ': survey_id})
+
         workbook = exporter.create_comments_book(survey_id, get_all_comments_by_survey_id(survey_id))
     except Exception as e:
         logger.error("File generation went wrong ", error=e)
         return server_error(500)
 
-    return send_file(workbook.path, as_attachment=True)
+    return send_file(workbook, as_attachment=True)
 
 
 if __name__ == '__main__':
