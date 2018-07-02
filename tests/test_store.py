@@ -40,55 +40,6 @@ class TestStoreService(unittest.TestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_get_comments_retrieve_a_comment_and_generate_excel(self):
-        survey_response = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
-                                                TestStoreService.create_test_data(1, "023"))
-        db.session.add(survey_response)
-        db.session.commit()
-        db.session.flush()
-        result = server.get_all_comments_by_survey_id('023')
-
-        workbook_file_name = exporter.create_comments_book('023', result)
-
-        self.assertEqual(os.path.isfile(workbook_file_name), True)
-
-        os.remove(workbook_file_name)
-
-    def test_get_comments_retrieve_a_comment_by_survey_id(self):
-        survey_response = server.SurveyResponse("0d51ca67-98d9-4ae9-9187-2887f24c0a1f", False,
-                                                TestStoreService.create_test_data(1, '023'))
-        db.session.add(survey_response)
-        db.session.commit()
-        db.session.flush()
-
-        for i in range(1, 20):
-            tx_id = ''.join(random.choice('0123456789abcdef') for x in range(32))
-
-            response = server.SurveyResponse(tx_id=tx_id,
-                                             invalid=False,
-                                             data=TestStoreService.create_test_data(i, '024'))
-            db.session.add(response)
-            db.session.commit()
-            db.session.flush()
-
-        self.assertEqual(len(server.get_all_comments_by_survey_id('023')), 1)
-
-    def test_get_comments_retrieve_no_comment_by_survey_id(self):
-        survey_response = server.SurveyResponse(''.join(random.choice('0123456789abcdef') for i in range(32)), False,
-                                                TestStoreService.create_no_comment_test_data(1, '023'))
-        server.merge(survey_response)
-
-        for i in range(1, 11):
-            response = server.SurveyResponse(tx_id="0d51ca67-98d9-4ae9-9187-2887f24c0a1f",
-                                             invalid=False,
-                                             data=TestStoreService.create_test_data(i, '024'))
-            server.merge(response)
-
-        self.assertEqual(len(server.get_all_comments_by_survey_id('023')), 0)
-
-    def test_get_comments_retrieve_no_comments_survey_id(self):
-        self.assertEqual(len(server.get_all_comments_by_survey_id('023')), 0)
-
     # /responses POST
     def test_empty_post_request(self):
         r = self.app.post(self.endpoints['responses'])
