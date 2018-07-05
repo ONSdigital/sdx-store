@@ -3,7 +3,6 @@ import json
 import logging
 import os
 from datetime import datetime
-
 from flask import Flask, Response, jsonify, request, send_file
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, inspect, select
@@ -368,12 +367,16 @@ def get_all_comments_by_survey_id(survey_id):
     logger.info("Comments retrieved " + str(len(records)))
     return records
 
+@app.route('/hallo', methods=['GET'])
+def get_hallo():
+    return jsonify({'status': 'OK'})
+
 
 @app.route('/comments/<string:survey_id>', methods=['GET'])
 def get_comments(survey_id):
-    logger.info("Exporting comments for survey id " + survey_id)
+    logger.info("Exporting comments for survey id ", survey_id=survey_id)
 
-    if survey_id is None:
+    if not survey_id:
         logger.error("Survey_id is none : " + survey_id)
         return server_error(400)
 

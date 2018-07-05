@@ -1,6 +1,6 @@
 import os
 
-from flask import logging
+import logging
 from openpyxl import Workbook
 import time
 

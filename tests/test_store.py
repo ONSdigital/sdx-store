@@ -1,20 +1,20 @@
 import json
 import logging
-import os
 import unittest
-import random
 
 import mock
 from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
-import exporter
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
 from tests.test_data import test_feedback_message, invalid_feedback_message
 
 import server
 from server import db, InvalidUsageError, logger
+from mock import patch
+import tempfile
+import os
 
 
 @testing.postgresql.skipIfNotInstalled
@@ -24,6 +24,7 @@ class TestStoreService(unittest.TestCase):
         'invalid': '/invalid_responses',
         'queue': '/queue',
         'healthcheck': '/healthcheck',
+        'comments': 'comments',
     }
 
     logger = wrap_logger(logging.getLogger("TEST"))
@@ -161,98 +162,55 @@ class TestStoreService(unittest.TestCase):
             r = self.app.get(self.endpoints['healthcheck'])
             self.assertEqual(500, r.status_code)
 
+    def test_get_comments(self):
+        with mock.patch('server.get_all_comments_by_survey_id') as result_mock, \
+                patch('exporter.create_comments_book') as mock_workbook:
+
+            result_mock.return_value = self.create_test_data(1, '023')
+
+            fd, path = tempfile.mkstemp()
+            try:
+                with os.fdopen(fd, 'w') as tmp:
+                    # do stuff with temp file
+                    tmp.write('stuff')
+                    mock_workbook.return_value = path
+
+                r = self.app.get(self.endpoints['comments'] + '/132')
+
+                self.assertFalse(False, None)
+
+            finally:
+                os.remove(path)
+
     @staticmethod
     def create_test_data(number: 1, survey_id):
         test_data = json.dumps(
             {
-                'data': {
-                    '146': 'Change comments included',
-                    '146a': 'Yes',
-                    '146b': 'In-store / online promotions',
-                    '146c': 'Special events (e.g. sporting events)',
-                    '146d': 'Calendar events (e.g. Christmas, Easter, Bank Holiday)',
-                    '146e': 'Weather',
-                    '146f': 'Store closures',
-                    '146g': 'Store openings',
-                    '146h': 'Other'
+                "data": {
+                    "146": "Change comments included",
+                    "146a": "Yes",
+                    "146b": "In-store / online promotions",
+                    "146c": "Special events (e.g. sporting events)",
+                    "146d": "Calendar events (e.g. Christmas, Easter, Bank Holiday)",
+                    "146e": "Weather",
+                    "146f": "Store closures",
+                    "146g": "Store openings",
+                    "146h": "Other"
                 },
-                'type': 'uk.gov.ons.edc.eq:surveyresponse',
-                'tx_id': 'f088d89d-a367-876e-f29f-ae8f1a26' + str(number),
-                'origin': 'uk.gov.ons.edc.eq',
-                'version': '0.0.1',
-                'metadata': {
-                    'ru_ref': '12345678901A',
-                    'user_id': '789473423'
+                "type": "uk.gov.ons.edc.eq:surveyresponse",
+                "tx_id": "f088d89d-a367-876e-f29f-ae8f1a26" + str(number),
+                "origin": "uk.gov.ons.edc.eq",
+                "version": "0.0.1",
+                "metadata": {
+                    "ru_ref": "12345678901A",
+                    "user_id": "789473423"
                 },
-                'survey_id': survey_id,
-                'collection': {
-                    'period': '1604',
-                    'exercise_sid': 'hfjdskf',
-                    'instrument_id': '0215'
+                "survey_id": survey_id,
+                "collection": {
+                    "period": "1604",
+                    "exercise_sid": "hfjdskf",
+                    "instrument_id": "0215"
                 },
-                'submitted_at': '2016-03-12T10:39:40Z'
+                "submitted_at": "2016-03-12T10:39:40Z"
             })
         return test_data
-
-    @staticmethod
-    def create_no_comment_test_data(number: 1, survey_id):
-        test_data = json.dumps(
-            {
-                'data': {
-                    '146a': 'Yes',
-                    '146b': 'In-store / online promotions',
-                    '146c': 'Special events (e.g. sporting events)',
-                    '146d': 'Calendar events (e.g. Christmas, Easter, Bank Holiday)',
-                    '146e': 'Weather',
-                    '146f': 'Store closures',
-                    '146g': 'Store openings',
-                    '146h': 'Other'
-                },
-                'type': 'uk.gov.ons.edc.eq:surveyresponse',
-                'tx_id': 'f088d89d-a367-876e-f29f-ae8f1a26' + str(number),
-                'origin': 'uk.gov.ons.edc.eq',
-                'version': '0.0.1',
-                'metadata': {
-                    'ru_ref': '12345678901A',
-                    'user_id': '789473423'
-                },
-                'survey_id': survey_id,
-                'collection': {
-                    'period': '1604',
-                    'exercise_sid': 'hfjdskf',
-                    'instrument_id': '0215'
-                },
-                'submitted_at': '2016-03-12T10:39:40Z'
-            })
-        return test_data
-
-    @staticmethod
-    def create_str_comments():
-        return json.loads(
-            {
-                'data': {
-                    '146a': 'Yes',
-                    '146b': 'In-store / online promotions',
-                    '146c': 'Special events (e.g. sporting events)',
-                    '146d': 'Calendar events (e.g. Christmas, Easter, Bank Holiday)',
-                    '146e': 'Weather',
-                    '146f': 'Store closures',
-                    '146g': 'Store openings',
-                    '146h': 'Other'
-                },
-                'type': 'uk.gov.ons.edc.eq:surveyresponse',
-                'tx_id': 'f088d89d-a367-876e-f29f-ae8f1a26',
-                'origin': 'uk.gov.ons.edc.eq',
-                'version': '0.0.1',
-                'metadata': {
-                    'ru_ref': '12345678901A',
-                    'user_id': '789473423'
-                },
-                'survey_id': '023',
-                'collection': {
-                    'period': '1604',
-                    'exercise_sid': 'hfjdskf',
-                    'instrument_id': '0215'
-                },
-                'submitted_at': '2016-03-12T10:39:40Z'
-            })
