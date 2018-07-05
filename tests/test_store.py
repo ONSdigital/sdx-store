@@ -3,10 +3,12 @@ import logging
 import unittest
 
 import mock
+from openpyxl.conftest import Workbook
 from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
+import exporter
 from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
 from tests.test_data import test_feedback_message, invalid_feedback_message
 
@@ -162,40 +164,44 @@ class TestStoreService(unittest.TestCase):
             r = self.app.get(self.endpoints['healthcheck'])
             self.assertEqual(500, r.status_code)
 
+    data = {"data": {"11": "1/4/2016", "12": "31/10/2016", "20": "1800000", "21": "60000", "22": "705000", "23": "900",
+                     "24": "74", "25": "50", "26": "100", "27": "7400", "50": "205", "51": "84", "52": "10", "53": "73",
+                     "54": "24", "146": "Change comments included", "146a": "Yes",
+                     "146b": "In-store / online promotions", "146c": "Special events (e.g. sporting events)",
+                     "146d": "Calendar events (e.g. Christmas, Easter, Bank Holiday)", "146e": "Weather",
+                     "146f": "Store closures", "146g": "Store openings", "146h": "Other"},
+            "type": "uk.gov.ons.edc.eq:surveyresponse", "tx_id": "0d51ca67-98d9-4ae9-9187-2887f24c0a1f",
+            "origin": "uk.gov.ons.edc.eq", "version": "0.0.1",
+            "metadata": {"ru_ref": "12345678901A", "user_id": "789473423"},
+            "survey_id": "023", "collection": {"period": "1604", "exercise_sid": "hfjdskf", "instrument_id": "0215"},
+            "submitted_at": "2016-03-12T10:39:40Z"}
+
+    def test_create_workbook(self):
+        survey = server.SurveyResponse('123', True, self.data)
+        comments = [survey]
+        result = exporter.create_comments_book('023', comments)
+        self.assertEqual(os.path.isfile(result), True)
+
     def test_get_comments(self):
         with mock.patch('server.get_all_comments_by_survey_id') as result_mock, \
                 patch('exporter.create_comments_book') as mock_workbook:
 
-            result_mock.return_value = self.create_test_data(1, '023')
+            result_mock.return_value = []
+            survey = server.SurveyResponse('123', True, self.data)
+            comments = [survey]
+            result = exporter.create_comments_book('023', comments)
+            mock_workbook.return_value = result
 
-            fd, path = tempfile.mkstemp()
-            try:
-                with os.fdopen(fd, 'w') as tmp:
-                    # do stuff with temp file
-                    tmp.write('stuff')
-                    mock_workbook.return_value = path
+            endpoint_result = self.app.get(self.endpoints['comments'] + '/023')
 
-                r = self.app.get(self.endpoints['comments'] + '/132')
-
-                self.assertFalse(False, None)
-
-            finally:
-                os.remove(path)
+            self.assertEqual(200, endpoint_result.status_code)
 
     @staticmethod
     def create_test_data(number: 1, survey_id):
         test_data = json.dumps(
             {
                 "data": {
-                    "146": "Change comments included",
-                    "146a": "Yes",
-                    "146b": "In-store / online promotions",
-                    "146c": "Special events (e.g. sporting events)",
-                    "146d": "Calendar events (e.g. Christmas, Easter, Bank Holiday)",
-                    "146e": "Weather",
-                    "146f": "Store closures",
-                    "146g": "Store openings",
-                    "146h": "Other"
+                    "146": "Change comments included"
                 },
                 "type": "uk.gov.ons.edc.eq:surveyresponse",
                 "tx_id": "f088d89d-a367-876e-f29f-ae8f1a26" + str(number),

@@ -10,6 +10,7 @@ logger = wrap_logger(logging.getLogger(__name__))
 
 
 def create_comments_book(survey_id: str, comments) -> str:
+    logger.info(comments)
     logger.info("Generation excel file ")
     wb = Workbook()
     wb.create_sheet('Exported comments')
@@ -27,5 +28,4 @@ def create_comments_book(survey_id: str, comments) -> str:
 
     wb.save(filename)
     wb.close()
-
     return filename
