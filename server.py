@@ -367,10 +367,6 @@ def get_all_comments_by_survey_id(survey_id):
     logger.info("Comments retrieved " + str(len(records)))
     return records
 
-@app.route('/hallo', methods=['GET'])
-def get_hallo():
-    return jsonify({'status': 'OK'})
-
 
 @app.route('/comments/<string:survey_id>', methods=['GET'])
 def get_comments(survey_id):

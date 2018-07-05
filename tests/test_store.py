@@ -3,7 +3,6 @@ import logging
 import unittest
 
 import mock
-from openpyxl.conftest import Workbook
 from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
@@ -15,7 +14,6 @@ from tests.test_data import test_feedback_message, invalid_feedback_message
 import server
 from server import db, InvalidUsageError, logger
 from mock import patch
-import tempfile
 import os
 
 
@@ -185,7 +183,6 @@ class TestStoreService(unittest.TestCase):
     def test_get_comments(self):
         with mock.patch('server.get_all_comments_by_survey_id') as result_mock, \
                 patch('exporter.create_comments_book') as mock_workbook:
-
             result_mock.return_value = []
             survey = server.SurveyResponse('123', True, self.data)
             comments = [survey]
@@ -195,6 +192,18 @@ class TestStoreService(unittest.TestCase):
             endpoint_result = self.app.get(self.endpoints['comments'] + '/023')
 
             self.assertEqual(200, endpoint_result.status_code)
+
+    def test_get_comments_has_errors(self):
+        with mock.patch('server.get_all_comments_by_survey_id') as result_mock, \
+                patch('exporter.create_comments_book') as mock_workbook:
+            survey = server.SurveyResponse('123', True, self.data)
+            comments = [survey]
+            result_mock.return_value = comments
+            mock_workbook.side_effect = Exception
+
+            endpoint_result = self.app.get(self.endpoints['comments'] + '/023')
+
+            self.assertEqual(500, endpoint_result.status_code)
 
     @staticmethod
     def create_test_data(number: 1, survey_id):
