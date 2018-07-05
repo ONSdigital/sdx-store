@@ -370,8 +370,6 @@ def get_all_comments_by_survey_id(survey_id):
 
 @app.route('/comments/<string:survey_id>', methods=['GET'])
 def get_comments(survey_id):
-    logger.info("Exporting comments for survey id ", survey_id=survey_id)
-
     if not survey_id:
         logger.error("Survey_id is none : " + survey_id)
         return server_error(400)
