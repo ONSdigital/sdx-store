@@ -13,10 +13,10 @@ if os.getenv("CF_DEPLOYMENT", False):
     DB_URI = rds_config[0].get('credentials').get('uri')
 else:
     DB_HOST = os.getenv('SDX_STORE_POSTGRES_HOST', '0.0.0.0')
-    DB_PORT = os.getenv('SDX_STORE_POSTGRES_PORT', '5433')
-    DB_NAME = os.getenv('SDX_STORE_POSTGRES_NAME', 'sdx')
-    DB_USER = os.getenv('SDX_STORE_POSTGRES_USER', 'sdx')
-    DB_PASSWORD = os.getenv('SDX_STORE_POSTGRES_PASSWORD', 'sdx')
+    DB_PORT = os.getenv('SDX_STORE_POSTGRES_PORT', '5432')
+    DB_NAME = os.getenv('SDX_STORE_POSTGRES_NAME', 'postgres')
+    DB_USER = os.getenv('SDX_STORE_POSTGRES_USER', 'postgres')
+    DB_PASSWORD = os.getenv('SDX_STORE_POSTGRES_PASSWORD', 'secret')
     DB_URI = 'postgresql://{}:{}@{}:{}/{}'.format(DB_USER,
                                                   DB_PASSWORD,
                                                   DB_HOST,
