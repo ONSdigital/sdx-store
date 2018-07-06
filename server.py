@@ -1,19 +1,19 @@
-
+from datetime import datetime
 import json
 import logging
 import os
-from datetime import datetime
-from flask import Flask, Response, jsonify, request, send_file
+
+from flask import jsonify, Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, String, inspect, select
+from sqlalchemy import inspect, select, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 
-import exporter
 import settings
+
 
 __version__ = "3.2.0"
 
@@ -358,35 +358,6 @@ def healthcheck():
         return server_error(500)
     else:
         return jsonify({'status': 'OK'})
-
-
-def get_all_comments_by_survey_id(survey_id):
-    # collect survey based on survey id and and 146 code
-
-    records = db.session.query(SurveyResponse).filter(SurveyResponse.data['survey_id'].astext == survey_id).all()
-    logger.info("Comments retrieved " + str(len(records)))
-    return records
-
-
-@app.route('/comments/<string:survey_id>', methods=['GET'])
-def get_comments(survey_id):
-    if not survey_id:
-        logger.error("Survey_id is none : " + survey_id)
-        return server_error(400)
-
-    logger.info("Exporting comments for survey id " + survey_id)
-    try:
-        comments = get_all_comments_by_survey_id(survey_id)
-
-        if not comments or len(comments) == 0:
-            return jsonify({'No comments to export for ': survey_id})
-
-        workbook = exporter.create_comments_book(survey_id, get_all_comments_by_survey_id(survey_id))
-    except Exception as e:
-        logger.error("File generation went wrong ", error=e)
-        return server_error(500)
-
-    return send_file(workbook, as_attachment=True)
 
 
 if __name__ == '__main__':
