@@ -1,8 +1,8 @@
-
+from datetime import datetime
 import json
 import logging
 import os
-from datetime import datetime
+
 from flask import Flask, Response, jsonify, request, send_file
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, inspect, select
@@ -142,7 +142,8 @@ def get_responses(tx_id=None, invalid=None):
     else:
         per_page = int(per_page)
 
-    kwargs = {k: v for k, v in {'tx_id': tx_id, 'invalid': invalid}.items() if v is not None}
+    kwargs = {k: v for k, v in {'tx_id': tx_id,
+                                'invalid': invalid}.items() if v is not None}
 
     try:
         r = SurveyResponse.query.filter_by(**kwargs).paginate(page, per_page)
@@ -222,7 +223,8 @@ def save_feedback_response(bound_logger, survey_feedback_response):
         db.session.add(feedback_response)
         db.session.commit()
     except IntegrityError as e:
-        logger.error("Integrity error in database. Rolling back commit", error=e)
+        logger.error(
+            "Integrity error in database. Rolling back commit", error=e)
         db.session.rollback()
         raise e
     except SQLAlchemyError as e:
@@ -290,7 +292,8 @@ def do_save_response():
         try:
             metadata = survey_response['metadata']
         except KeyError:
-            raise InvalidUsageError("Missing metadata. Unable to save response", 400)
+            raise InvalidUsageError(
+                "Missing metadata. Unable to save response", 400)
 
         bound_logger = logger.bind(user_id=metadata.get('user_id'),
                                    ru_ref=metadata.get('ru_ref'),
@@ -363,27 +366,29 @@ def healthcheck():
 def get_all_comments_by_survey_id(survey_id):
     # collect survey based on survey id and and 146 code
 
-    records = db.session.query(SurveyResponse).filter(SurveyResponse.data['survey_id'].astext == survey_id).all()
-    logger.info("Comments retrieved " + str(len(records)))
+    records = db.session.query(SurveyResponse).filter(
+        SurveyResponse.data['survey_id'].astext == survey_id).all()
+    logger.info("Comments retrieved", count=len(records))
     return records
 
 
 @app.route('/comments/<string:survey_id>', methods=['GET'])
 def get_comments(survey_id):
     if not survey_id:
-        logger.error("Survey_id is none : " + survey_id)
-        return server_error(400)
+        logger.error("Survey_id is none")
+        return jsonify({'message': 'No survey id provided'}), 400
 
-    logger.info("Exporting comments for survey id " + survey_id)
+    logger.info("Exporting comments", survey_id=survey_id)
     try:
         comments = get_all_comments_by_survey_id(survey_id)
 
         if not comments or len(comments) == 0:
-            return jsonify({'No comments to export for ': survey_id})
+            return jsonify({'message': 'No comments to export for {}'.format(survey_id)})
 
-        workbook = exporter.create_comments_book(survey_id, get_all_comments_by_survey_id(survey_id))
+        workbook = exporter.create_comments_book(
+            survey_id, get_all_comments_by_survey_id(survey_id))
     except Exception as e:
-        logger.error("File generation went wrong ", error=e)
+        logger.error("File generation went wrong", error=e)
         return server_error(500)
 
     return send_file(workbook, as_attachment=True)
