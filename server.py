@@ -368,12 +368,8 @@ def get_all_comments_by_survey_id(survey_id):
     return records
 
 
-@app.route('/comments/<string:survey_id>', methods=['GET'])
+@app.route('/comments/<survey_id>', methods=['GET'])
 def get_comments(survey_id):
-    if not survey_id:
-        logger.error("Survey_id is none")
-        return jsonify({'message': 'No survey id provided'}), 400
-
     logger.info("Exporting comments", survey_id=survey_id)
     try:
         comments = get_all_comments_by_survey_id(survey_id)

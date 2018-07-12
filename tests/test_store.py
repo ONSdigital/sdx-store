@@ -185,6 +185,14 @@ class TestStoreService(unittest.TestCase):
             self.assertEqual(200, response.status_code)
             self.assertIs(type(response.get_data()), bytes)
 
+    def test_no_comments_for_survey(self):
+        with mock.patch('server.get_all_comments_by_survey_id') as result_mock:
+            result_mock.return_value = []
+
+            response = self.app.get(self.endpoints['comments'] + '/023')
+            self.assertEqual(200, response.status_code)
+            self.assertEqual(response.get_data(), b'{\n  "message": "No comments to export for 023"\n}\n')
+
     def test_get_comments_has_errors(self):
         with mock.patch('server.get_all_comments_by_survey_id') as result_mock:
             result_mock.side_effect = SQLAlchemyError
