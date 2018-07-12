@@ -1,4 +1,5 @@
 ### Unreleased
+  - Add /comments endpoint to get comments from rsi surveys in an excel document
 
 ### 3.2.0 2018-01-04
   - Add /info healthcheck endpoint

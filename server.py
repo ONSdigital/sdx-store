@@ -3,17 +3,17 @@ import json
 import logging
 import os
 
-from flask import jsonify, Flask, Response, request
+from flask import Flask, Response, jsonify, request, make_response
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import inspect, select, Integer, String
+from sqlalchemy import Integer, String, inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 
+import exporter
 import settings
-
 
 __version__ = "3.2.0"
 
@@ -172,8 +172,7 @@ def merge(response):
         db.session.merge(response)
         db.session.commit()
     except IntegrityError as e:
-        logger.error("Integrity error in database. Rolling back commit",
-                     error=e)
+        logger.error("Integrity error in database. Rolling back commit", error=e)
         db.session.rollback()
         raise e
     except SQLAlchemyError as e:
@@ -358,6 +357,34 @@ def healthcheck():
         return server_error(500)
     else:
         return jsonify({'status': 'OK'})
+
+
+def get_all_comments_by_survey_id(survey_id):
+    # collect survey based on survey id and and 146 code
+
+    records = db.session.query(SurveyResponse).filter(
+        SurveyResponse.data['survey_id'].astext == survey_id).all()
+    logger.info("Comments retrieved", count=len(records))
+    return records
+
+
+@app.route('/comments/<survey_id>', methods=['GET'])
+def get_comments(survey_id):
+    logger.info("Exporting comments", survey_id=survey_id)
+    try:
+        comments = get_all_comments_by_survey_id(survey_id)
+    except SQLAlchemyError:
+        logger.exception("Database error")
+        return server_error("Database error")
+
+    if not comments or len(comments) == 0:
+        return jsonify({'message': 'No comments to export for {}'.format(survey_id)})
+
+    workbook, filename = exporter.create_comments_book(survey_id, comments)
+    response = make_response(workbook)
+    response.mimetype = 'application/vnd.ms-excel'
+    response.headers['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+    return response
 
 
 if __name__ == '__main__':
