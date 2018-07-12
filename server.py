@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-from flask import Flask, Response, jsonify, request, send_file
+from flask import Flask, Response, jsonify, request, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, inspect, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -381,17 +381,18 @@ def get_comments(survey_id):
     logger.info("Exporting comments", survey_id=survey_id)
     try:
         comments = get_all_comments_by_survey_id(survey_id)
+    except SQLAlchemyError:
+        logger.exception("Database error")
+        return server_error("Database error")
 
-        if not comments or len(comments) == 0:
-            return jsonify({'message': 'No comments to export for {}'.format(survey_id)})
+    if not comments or len(comments) == 0:
+        return jsonify({'message': 'No comments to export for {}'.format(survey_id)})
 
-        workbook = exporter.create_comments_book(
-            survey_id, get_all_comments_by_survey_id(survey_id))
-    except Exception as e:
-        logger.error("File generation went wrong", error=e)
-        return server_error(500)
-
-    return send_file(workbook, as_attachment=True)
+    workbook, filename = exporter.create_comments_book(survey_id, comments)
+    response = make_response(workbook)
+    response.mimetype = 'application/vnd.ms-excel'
+    response.headers['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+    return response
 
 
 if __name__ == '__main__':
