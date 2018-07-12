@@ -142,8 +142,7 @@ def get_responses(tx_id=None, invalid=None):
     else:
         per_page = int(per_page)
 
-    kwargs = {k: v for k, v in {'tx_id': tx_id,
-                                'invalid': invalid}.items() if v is not None}
+    kwargs = {k: v for k, v in {'tx_id': tx_id, 'invalid': invalid}.items() if v is not None}
 
     try:
         r = SurveyResponse.query.filter_by(**kwargs).paginate(page, per_page)
@@ -173,8 +172,7 @@ def merge(response):
         db.session.merge(response)
         db.session.commit()
     except IntegrityError as e:
-        logger.error("Integrity error in database. Rolling back commit",
-                     error=e)
+        logger.error("Integrity error in database. Rolling back commit", error=e)
         db.session.rollback()
         raise e
     except SQLAlchemyError as e:
@@ -223,8 +221,7 @@ def save_feedback_response(bound_logger, survey_feedback_response):
         db.session.add(feedback_response)
         db.session.commit()
     except IntegrityError as e:
-        logger.error(
-            "Integrity error in database. Rolling back commit", error=e)
+        logger.error("Integrity error in database. Rolling back commit", error=e)
         db.session.rollback()
         raise e
     except SQLAlchemyError as e:
@@ -292,8 +289,7 @@ def do_save_response():
         try:
             metadata = survey_response['metadata']
         except KeyError:
-            raise InvalidUsageError(
-                "Missing metadata. Unable to save response", 400)
+            raise InvalidUsageError("Missing metadata. Unable to save response", 400)
 
         bound_logger = logger.bind(user_id=metadata.get('user_id'),
                                    ru_ref=metadata.get('ru_ref'),

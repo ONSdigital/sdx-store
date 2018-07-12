@@ -1,18 +1,17 @@
 import json
 import logging
+import mock
 import unittest
 
-import mock
-from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from structlog import wrap_logger
 import testing.postgresql
 
 import exporter
-from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
-from tests.test_data import test_feedback_message, invalid_feedback_message
-
 import server
 from server import db, InvalidUsageError, logger
+from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
+from tests.test_data import test_feedback_message, invalid_feedback_message
 
 
 @testing.postgresql.skipIfNotInstalled
