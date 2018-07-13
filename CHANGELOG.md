@@ -1,4 +1,5 @@
 ### Unreleased
+  - Add export comments script
 
 ### 3.2.0 2018-01-04
   - Add /info healthcheck endpoint
