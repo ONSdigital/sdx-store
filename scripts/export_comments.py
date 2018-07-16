@@ -57,14 +57,21 @@ def create_comments_excel_file(survey_id, submissions):
     print("Generating Excel file")
     workbook = Workbook()
     row = 2
+    surveys_with_comments_count = 0
     ws = workbook.active
-    ws.cell(1, 1, "Survey ID: {}".format(survey_id))
-    ws.cell(1, 2, "Comments found: {}".format(str(len(submissions))))
+
     for submission in submissions:
+        comment = submission.data['data'].get('146')
+        if not comment:
+            continue
         row += 1
-        comment = submission.data['data']['146']
+        surveys_with_comments_count += 1
         ws.cell(row, 1, comment)
         ws.cell(row, 2, submission.data['submitted_at'])
+
+    ws.cell(1, 1, "Survey ID: {}".format(survey_id))
+    ws.cell(1, 2, "Comments found: {}".format(surveys_with_comments_count))
+    print("{} out of {} submissions had comments".format(surveys_with_comments_count, len(submissions)))
 
     parent_dir_path = os.path.dirname(
         os.path.dirname(os.path.realpath(__file__)))
@@ -81,7 +88,7 @@ def get_all_submissions(survey_id, period):
         SurveyResponse.data['survey_id'].astext == survey_id)
     records = survey_records.filter(
         SurveyResponse.data['collection']['period'].astext == period).all()
-    print("Retrieved {} comments".format(len(records)))
+    print("Retrieved {} submissions".format(len(records)))
     return records
 
 
