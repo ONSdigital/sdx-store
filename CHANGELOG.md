@@ -1,6 +1,8 @@
 ### Unreleased
-  - Removed dependencies that were unused and had security vulnerabilities
 
+### 3.4.0 2018-08-13
+  - Removed dependencies that were unused and had security vulnerabilities
+  
 ### 3.3.0 2018-07-16
   - Add export comments script
 
