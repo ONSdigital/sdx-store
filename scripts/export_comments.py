@@ -1,6 +1,6 @@
-import sys
 import os
-import time
+from string import ascii_lowercase
+import sys
 parent_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(parent_dir_path)
 
@@ -52,7 +52,7 @@ class SurveyResponse(base):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
-def create_comments_excel_file(survey_id, submissions):
+def create_comments_excel_file(survey_id, period, submissions):
     """Extract comments from submissions and write them to an excel file"""
     print("Generating Excel file")
     workbook = Workbook()
@@ -62,12 +62,20 @@ def create_comments_excel_file(survey_id, submissions):
 
     for submission in submissions:
         comment = submission.data['data'].get('146')
+
+        boxes_selected = ""
+        for key in ('146' + letter for letter in ascii_lowercase[1:]):
+            if key in submission.data['data'].keys():
+                boxes_selected = boxes_selected + key + ' '
+
         if not comment:
             continue
         row += 1
         surveys_with_comments_count += 1
-        ws.cell(row, 1, comment)
-        ws.cell(row, 2, submission.data['submitted_at'])
+        ws.cell(row, 1, submission.data['metadata']['ru_ref'])
+        ws.cell(row, 2, submission.data['collection']['period'])
+        ws.cell(row, 3, boxes_selected)
+        ws.cell(row, 4, comment)
 
     ws.cell(1, 1, "Survey ID: {}".format(survey_id))
     ws.cell(1, 2, "Comments found: {}".format(surveys_with_comments_count))
@@ -75,11 +83,10 @@ def create_comments_excel_file(survey_id, submissions):
 
     parent_dir_path = os.path.dirname(
         os.path.dirname(os.path.realpath(__file__)))
-    filename = os.path.join(parent_dir_path, "comments_{}.xlsx".format(
-        time.strftime("%Y%m%d-%H%M%S")))
+    filename = os.path.join(parent_dir_path, "{}_{}.xlsx".format(survey_id, period))
     workbook.save(filename)
     workbook.close()
-    print("Excel file generated")
+    print("Excel file {} generated".format(filename))
 
 
 def get_all_submissions(survey_id, period):
@@ -109,6 +116,6 @@ if __name__ == "__main__":
         raise
 
     if submissions:
-        create_comments_excel_file(survey_id, submissions)
+        create_comments_excel_file(survey_id, period, submissions)
     else:
         print("No submissions, exiting script")
