@@ -1,9 +1,8 @@
-from datetime import datetime
-import json
+import hashlib
 import logging
 import os
 
-from flask import jsonify, Flask, Response, request
+from flask import jsonify, Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, select, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -101,9 +100,7 @@ class FeedbackResponse(db.Model):
                         default=False)
 
     data = db.Column("data", JSONB)
-
     survey = db.Column("survey", String(length=25))
-
     period = db.Column("period", String(length=25))
 
     def __init__(self, invalid, data, survey, period):
@@ -130,17 +127,8 @@ def get_responses(tx_id=None, invalid=None):
                                 status_code=400,
                                 payload=request.args)
 
-    page = request.args.get('page')
-    per_page = request.args.get('per_page')
-
-    if not page:
-        page = 1
-    else:
-        page = int(page)
-    if not per_page:
-        per_page = 100
-    else:
-        per_page = int(per_page)
+    page = request.args.get('page', type=int, default=1)
+    per_page = request.args.get('per_page', type=int, default=100)
 
     kwargs = {k: v for k, v in {'tx_id': tx_id, 'invalid': invalid}.items() if v is not None}
 
@@ -153,18 +141,6 @@ def get_responses(tx_id=None, invalid=None):
                      tx_id=tx_id,
                      invalid=invalid,
                      error=e)
-
-
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    raise TypeError("Type not serializable")
-
-
-def json_response(content):
-    output = json.dumps(object_as_dict(content), default=json_serial)
-    return Response(output, mimetype='application/json')
 
 
 def merge(response):
@@ -185,8 +161,9 @@ def merge(response):
 
 
 def object_as_dict(obj):
-    return {c.key: getattr(obj, c.key)
-            for c in inspect(obj).mapper.column_attrs}
+    '''Converts a sqlalchemy object into a dictionary where the column names are the keys'''
+    return {column.key: getattr(obj, column.key)
+            for column in inspect(obj).mapper.column_attrs}
 
 
 def save_response(bound_logger, survey_response):
@@ -274,19 +251,15 @@ def do_save_response():
     response_type = str(survey_response.get('type'))
 
     if response_type.find("feedback") != -1:
-
         bound_logger = logger.bind(response_type="feedback",
                                    survey_id=survey_response.get("survey_id"))
-
         try:
             save_feedback_response(bound_logger, survey_response)
         except SQLAlchemyError:
             return server_error("Database error")
         except IntegrityError:
             return server_error("Integrity error")
-
     else:
-
         try:
             metadata = survey_response['metadata']
         except KeyError:
@@ -325,8 +298,8 @@ def do_get_responses():
 
     try:
         return jsonify([item.to_dict() for item in page.items])
-    except AttributeError as e:
-        logger.error("No items in page", error=e)
+    except AttributeError:
+        logger.exception("No items in page")
         return jsonify({}), 404
 
 
@@ -335,11 +308,13 @@ def do_get_response(tx_id):
     result = get_responses(tx_id=tx_id)
     if result:
         try:
-            r = object_as_dict(result.items[0])['data']
-            return jsonify(r)
+            result_dict = object_as_dict(result.items[0])['data']
+            response = jsonify(result_dict)
+            response.headers['Content-MD5'] = hashlib.md5(response.data).hexdigest()
+            return response
 
-        except IndexError as e:
-            logger.error('Empty items list in result.', error=e)
+        except IndexError:
+            logger.exception('Empty items list in result.')
             return jsonify({}), 404
 
     else:

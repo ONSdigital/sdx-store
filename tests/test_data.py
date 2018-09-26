@@ -68,7 +68,7 @@ invalid_feedback_message = '''
  }
  '''
 
-updated_message = '''
+second_test_message = '''
 {
   "type": "uk.gov.ons.edc.eq:surveyresponse",
   "origin": "uk.gov.ons.edc.eq",
