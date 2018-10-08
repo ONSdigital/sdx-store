@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import unittest
@@ -7,7 +8,7 @@ from structlog import wrap_logger
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import testing.postgresql
 
-from tests.test_data import invalid_message, test_message, updated_message, missing_tx_id_message
+from tests.test_data import invalid_message, test_message, second_test_message, missing_tx_id_message
 from tests.test_data import test_feedback_message, invalid_feedback_message
 
 import server
@@ -20,13 +21,17 @@ class TestStoreService(unittest.TestCase):
         'responses': '/responses',
         'invalid': '/invalid_responses',
         'queue': '/queue',
-        'healthcheck': '/healthcheck',
+        'healthcheck': '/healthcheck'
     }
 
     logger = wrap_logger(logging.getLogger("TEST"))
 
-    test_json = json.loads(test_message)
-    updated_json = json.loads(updated_message)
+    test_message_json = json.loads(test_message)
+    # Imitate what jsonify does in flask
+    test_message_sorted = json.dumps(test_message_json,
+                                     sort_keys=True,
+                                     indent=2,
+                                     separators=(', ', ': ')) + '\n'
 
     def setUp(self):
         self.app = server.app.test_client()
@@ -90,17 +95,20 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(404, r.status_code)
 
     def test_get_valid_id_returns_id_and_200(self):
-        test_json = json.loads(updated_message)
-        expected_id = test_json['tx_id']
+        expected_id = self.test_message_json['tx_id']
+        response_size_original = len(self.test_message_sorted)
+        response_hash_original = hashlib.md5(self.test_message_sorted.encode('utf-8')).hexdigest()
 
         self.app.post(self.endpoints['responses'],
-                      data=updated_message,
+                      data=test_message,
                       content_type='application/json')
 
         r = self.app.get(self.endpoints['responses'] + '/' + expected_id)
 
-        self.assertIsNotNone(r.data)
+        self.assertEqual(r.data, self.test_message_sorted.encode('utf-8'))
         self.assertEqual(200, r.status_code)
+        self.assertEqual(r.headers['Content-MD5'], response_hash_original)
+        self.assertEqual(r.headers['Content-Length'], str(response_size_original))
 
         db.session.remove()
         db.drop_all()
@@ -114,9 +122,8 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(400, r.status_code)
 
     def test_get_responses_per_page(self):
-
         self.app.post(self.endpoints['responses'],
-                      data=updated_message,
+                      data=second_test_message,
                       content_type='application/json')
 
         self.app.post(self.endpoints['responses'],
