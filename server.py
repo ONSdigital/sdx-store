@@ -22,6 +22,8 @@ logging.basicConfig(format=settings.LOGGING_FORMAT,
 
 logger = wrap_logger(logging.getLogger(__name__))
 
+logger.info("Starting SDX Store", version=__version__)
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = settings.DB_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
@@ -337,6 +339,5 @@ def healthcheck():
 
 if __name__ == '__main__':
     # Startup
-    logger.info("Starting server", version=__version__)
     port = int(os.getenv("PORT"))
     app.run(debug=True, host='0.0.0.0', port=port)
