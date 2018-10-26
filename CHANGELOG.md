@@ -1,5 +1,8 @@
 ### Unreleased
 
+### 3.5.0 2018-10-22
+  - Add MD5 hash to GET /responses
+
 ### 3.4.0 2018-08-13
   - Removed dependencies that were unused and had security vulnerabilities
   
