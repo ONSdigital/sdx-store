@@ -1,4 +1,5 @@
 ### Unreleased
+  - Add startup log with version
 
 ### 3.5.0 2018-10-22
   - Add MD5 hash to GET /responses
