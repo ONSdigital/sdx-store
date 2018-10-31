@@ -250,10 +250,12 @@ def do_save_response():
                                 status_code=400,
                                 payload=request.args)
 
+    bound_logger = logger.bind(tx_id=survey_response.get('tx_id'))
+
     response_type = str(survey_response.get('type'))
 
     if response_type.find("feedback") != -1:
-        bound_logger = logger.bind(response_type="feedback",
+        bound_logger = bound_logger.bind(response_type="feedback",
                                    survey_id=survey_response.get("survey_id"))
         try:
             save_feedback_response(bound_logger, survey_response)
@@ -267,9 +269,8 @@ def do_save_response():
         except KeyError:
             raise InvalidUsageError("Missing metadata. Unable to save response", 400)
 
-        bound_logger = logger.bind(user_id=metadata.get('user_id'),
-                                   ru_ref=metadata.get('ru_ref'),
-                                   tx_id=survey_response.get('tx_id'))
+        bound_logger = bound_logger.bind(user_id=metadata.get('user_id'),
+                                   ru_ref=metadata.get('ru_ref'))
 
         try:
             invalid = save_response(bound_logger, survey_response)
