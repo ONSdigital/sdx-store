@@ -170,7 +170,10 @@ def object_as_dict(obj):
 
 def save_response(bound_logger, survey_response):
     bound_logger.info("Saving response")
+
     invalid = survey_response.get("invalid")
+    if invalid:
+        survey_response.pop("invalid")
 
     try:
         tx_id = survey_response["tx_id"]
@@ -188,9 +191,12 @@ def save_response(bound_logger, survey_response):
 
 def save_feedback_response(bound_logger, survey_feedback_response):
     bound_logger.info("Saving feedback response")
-    invalid = survey_feedback_response.get("invalid")
     survey = survey_feedback_response.get("survey_id")
     period = survey_feedback_response.get("collection", {}).get("period")
+
+    invalid = survey_feedback_response.get("invalid")
+    if invalid:
+        survey_feedback_response.pop("invalid")
 
     feedback_response = FeedbackResponse(invalid=invalid,
                                          data=survey_feedback_response,
