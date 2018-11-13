@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 3.6.0 2018-11-13
   - Add startup log with version
 
 ### 3.5.0 2018-10-22
