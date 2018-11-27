@@ -11,6 +11,7 @@ from sqlalchemy import Column
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import Boolean
 from sqlalchemy.dialects.postgresql import JSONB, UUID, TIMESTAMP
+from sqlalchemy.ext.mutable import MutableDict
 
 import settings
 
@@ -37,7 +38,7 @@ class SurveyResponse(base):
                      Boolean,
                      default=False)
 
-    data = Column("data", JSONB)
+    data = Column("data", MutableDict.as_mutable(JSONB))
 
     def __init__(self, tx_id, invalid, data):
         self.tx_id = tx_id
