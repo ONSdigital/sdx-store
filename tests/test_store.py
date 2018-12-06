@@ -19,7 +19,7 @@ from server import db, InvalidUsageError, logger
 class TestStoreService(unittest.TestCase):
     endpoints = {
         'responses': '/responses',
-        'invalid': '/invalid_responses',
+        'invalid': '/invalid-responses',
         'queue': '/queue',
         'healthcheck': '/healthcheck'
     }
@@ -88,6 +88,11 @@ class TestStoreService(unittest.TestCase):
 
         db.session.remove()
         db.drop_all()
+
+    # /invalid-responses GET
+    def test_get_invalid_responses_returns_200(self):
+        r = self.app.get(self.endpoints['invalid'])
+        assert r.status_code == 200
 
     # /responses/<tx_id> GET
     def test_get_id_returns_404_if_not_stored(self):

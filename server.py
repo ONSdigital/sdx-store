@@ -262,7 +262,7 @@ def do_save_response():
 
     if response_type.find("feedback") != -1:
         bound_logger = bound_logger.bind(response_type="feedback",
-                                   survey_id=survey_response.get("survey_id"))
+                                         survey_id=survey_response.get("survey_id"))
         try:
             save_feedback_response(bound_logger, survey_response)
         except SQLAlchemyError:
@@ -276,7 +276,7 @@ def do_save_response():
             raise InvalidUsageError("Missing metadata. Unable to save response", 400)
 
         bound_logger = bound_logger.bind(user_id=metadata.get('user_id'),
-                                   ru_ref=metadata.get('ru_ref'))
+                                         ru_ref=metadata.get('ru_ref'))
 
         try:
             invalid = save_response(bound_logger, survey_response)
@@ -293,12 +293,8 @@ def do_save_response():
 
 @app.route('/invalid-responses', methods=['GET'])
 def do_get_invalid_responses():
-    responses = get_responses(invalid=True)
-
-    if responses:
-        jsonify(responses)
-    else:
-        return jsonify({}), 404
+    page = get_responses(invalid=True)
+    return jsonify([item.to_dict() for item in page.items])
 
 
 @app.route('/responses', methods=['GET'])
@@ -321,11 +317,9 @@ def do_get_response(tx_id):
             response = jsonify(result_dict)
             response.headers['Content-MD5'] = hashlib.md5(response.data).hexdigest()
             return response
-
         except IndexError:
             logger.exception('Empty items list in result.')
             return jsonify({}), 404
-
     else:
         return jsonify({}), 404
 
