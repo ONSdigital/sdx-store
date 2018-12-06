@@ -95,9 +95,18 @@ class TestStoreService(unittest.TestCase):
         assert r.status_code == 200
 
     # /responses/<tx_id> GET
+    def test_get_id_returns_400_if_not_a_valid_uuid(self):
+        """Endpoint should return 400 if the tx_id isn't a valid uuid formatted uuid"""
+        r = self.app.get(self.endpoints['responses'] + '/123')
+        assert r.status_code == 400
+
+        r = self.app.get(self.endpoints['responses'] + '/ed7d29ed-612b-e981-d5ed-0e2e3c9951e3\n')
+        assert r.status_code == 400
+
     def test_get_id_returns_404_if_not_stored(self):
-        r = self.app.get(self.endpoints['responses'] + '/x')
-        self.assertEqual(404, r.status_code)
+        """Endpoint should return 404 if the tx_id isn't found in the database"""
+        r = self.app.get(self.endpoints['responses'] + '/35e5062b-7041-4030-8ff5-122b3ef216a9')
+        assert r.status_code == 404
 
     def test_get_valid_id_returns_id_and_200(self):
         expected_id = self.test_message_json['tx_id']

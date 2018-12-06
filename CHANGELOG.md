@@ -1,5 +1,6 @@
 ### Unreleased
   - Fix /invalid-responses endpoint
+  - Validate tx_id is a real uuid in the /responses/<tx_id> endpoint
 
 ### 3.7.0 2018-12-12
   - Remove 'invalid' key from stored data
