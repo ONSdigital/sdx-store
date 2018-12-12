@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import uuid
 
 from flask import jsonify, Flask, request
 from flask_sqlalchemy import SQLAlchemy
@@ -265,10 +266,10 @@ def do_save_response():
                                          survey_id=survey_response.get("survey_id"))
         try:
             save_feedback_response(bound_logger, survey_response)
-        except SQLAlchemyError:
-            return server_error("Database error")
         except IntegrityError:
             return server_error("Integrity error")
+        except SQLAlchemyError:
+            return server_error("Database error")
     else:
         try:
             metadata = survey_response['metadata']
@@ -280,10 +281,10 @@ def do_save_response():
 
         try:
             invalid = save_response(bound_logger, survey_response)
-        except SQLAlchemyError:
-            return server_error("Database error")
         except IntegrityError:
             return server_error("Integrity error")
+        except SQLAlchemyError:
+            return server_error("Database error")
 
         if invalid:
             return jsonify(invalid)
@@ -310,6 +311,11 @@ def do_get_responses():
 
 @app.route('/responses/<tx_id>', methods=['GET'])
 def do_get_response(tx_id):
+    try:
+        uuid.UUID(tx_id, version=4)
+    except ValueError:
+        raise InvalidUsageError("tx_id supplied is not a valid UUID", 400)
+
     result = get_responses(tx_id=tx_id)
     if result:
         try:
