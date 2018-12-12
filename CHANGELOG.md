@@ -1,4 +1,5 @@
 ### Unreleased
+  - Fix /invalid-responses endpoint
 
 ### 3.7.0 2018-12-12
   - Remove 'invalid' key from stored data
