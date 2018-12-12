@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 3.7.0 2018-12-12
   - Remove 'invalid' key from stored data
   - Add script that resets invalid stored data
 
