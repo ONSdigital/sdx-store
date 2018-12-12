@@ -14,7 +14,7 @@ from werkzeug.exceptions import BadRequest
 import settings
 
 
-__version__ = "3.6.0"
+__version__ = "3.7.0"
 
 logging.basicConfig(format=settings.LOGGING_FORMAT,
                     datefmt="%Y-%m-%dT%H:%M:%S",
