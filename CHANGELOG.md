@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 3.7.1 2018-12-20
   - Fix /invalid-responses endpoint
   - Validate tx_id is a real uuid in the /responses/<tx_id> endpoint
 
