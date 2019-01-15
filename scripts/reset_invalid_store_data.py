@@ -7,12 +7,9 @@ sys.path.append(parent_dir_path)
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.types import Boolean
-from sqlalchemy.dialects.postgresql import JSONB, UUID, TIMESTAMP
-from sqlalchemy.ext.mutable import MutableDict
 
+from app.models import SurveyResponse
 import settings
 
 try:
@@ -23,33 +20,6 @@ try:
 except SQLAlchemyError as e:
     print(e)
     raise
-
-
-class SurveyResponse(base):
-    __tablename__ = 'responses'
-    tx_id = Column("tx_id",
-                   UUID,
-                   primary_key=True)
-
-    ts = Column("ts",
-                TIMESTAMP(timezone=True))
-
-    invalid = Column("invalid",
-                     Boolean,
-                     default=False)
-
-    data = Column("data", MutableDict.as_mutable(JSONB))
-
-    def __init__(self, tx_id, invalid, data):
-        self.tx_id = tx_id
-        self.invalid = invalid
-        self.data = data
-
-    def __repr__(self):
-        return '<SurveyResponse {}>'.format(self.tx_id)
-
-    def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 def reset_store_data(tx_id):

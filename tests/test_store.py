@@ -94,6 +94,14 @@ class TestStoreService(unittest.TestCase):
         r = self.app.get(self.endpoints['invalid'])
         assert r.status_code == 200
 
+    # /responses POST
+    def test_post_invalid_response(self):
+        r = self.app.post(self.endpoints['responses'],
+                          data=invalid_message,
+                          content_type='application/json')
+        assert r.status_code == 200
+        assert r.data == b'true\n'
+
     # /responses/<tx_id> GET
     def test_get_id_returns_400_if_not_a_valid_uuid(self):
         """Endpoint should return 400 if the tx_id isn't a valid uuid formatted uuid"""

@@ -1,35 +1,17 @@
 import hashlib
-import logging
 import os
 import uuid
 
-from flask import jsonify, Flask, request
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import inspect, select, Integer, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from flask import jsonify, request
+from sqlalchemy import inspect, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from structlog import wrap_logger
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 
-import settings
+from app.exceptions import InvalidUsageError
+from app.models import FeedbackResponse, SurveyResponse
+from app import app, db, logger
 
-
-__version__ = "3.7.1"
-
-logging.basicConfig(format=settings.LOGGING_FORMAT,
-                    datefmt="%Y-%m-%dT%H:%M:%S",
-                    level=settings.LOGGING_LEVEL)
-
-logger = wrap_logger(logging.getLogger(__name__))
-
-logger.info("Starting SDX Store", version=__version__)
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = settings.DB_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
-
-db = SQLAlchemy(app=app)
 
 schema = Schema({
     'added_ms': Coerce(int),
@@ -40,77 +22,6 @@ schema = Schema({
     'ru_ref': str,
     'survey_id': str,
 })
-
-
-class InvalidUsageError(Exception):
-    status_code = 400
-
-    def __init__(self, message, status_code=None, payload=None):
-        Exception.__init__(self)
-        self.message = message
-        if status_code is not None:
-            self.status_code = status_code
-        self.payload = payload
-
-    def to_dict(self):
-        rv = dict(self.payload or ())
-        rv['message'] = self.message
-        return rv
-
-
-class SurveyResponse(db.Model):
-    __tablename__ = 'responses'
-    tx_id = db.Column("tx_id",
-                      UUID,
-                      primary_key=True)
-
-    ts = db.Column("ts",
-                   db.TIMESTAMP(timezone=True),
-                   server_default=db.func.now(),
-                   onupdate=db.func.now())
-
-    invalid = db.Column("invalid",
-                        db.Boolean,
-                        default=False)
-
-    data = db.Column("data", JSONB)
-
-    def __init__(self, tx_id, invalid, data):
-        self.tx_id = tx_id
-        self.invalid = invalid
-        self.data = data
-
-    def __repr__(self):
-        return '<SurveyResponse {}>'.format(self.tx_id)
-
-    def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-
-
-class FeedbackResponse(db.Model):
-    __tablename__ = "feedback_responses"
-    id = db.Column("id",
-                   Integer,
-                   primary_key=True)
-
-    ts = db.Column("ts",
-                   db.TIMESTAMP(timezone=True),
-                   server_default=db.func.now(),
-                   onupdate=db.func.now())
-
-    invalid = db.Column("invalid",
-                        db.Boolean,
-                        default=False)
-
-    data = db.Column("data", JSONB)
-    survey = db.Column("survey", String(length=25))
-    period = db.Column("period", String(length=25))
-
-    def __init__(self, invalid, data, survey, period):
-        self.invalid = invalid
-        self.data = data
-        self.survey = survey
-        self.period = period
 
 
 def create_tables():
@@ -146,6 +57,7 @@ def get_responses(tx_id=None, invalid=None):
                      error=e)
 
 
+# pylint: disable=maybe-no-member
 def merge(response):
     try:
         db.session.merge(response)
@@ -174,6 +86,7 @@ def save_response(bound_logger, survey_response):
 
     invalid = survey_response.get("invalid")
     if invalid:
+        bound_logger.info("Invalid key found in response. Popping invalid key before saving")
         survey_response.pop("invalid")
 
     try:
@@ -229,6 +142,7 @@ def test_sql(connection):
 
 @app.errorhandler(500)
 def server_error(error=None):
+    '''Handles the building and returning of a response in the case of an error'''
     logger.error(error, status=500)
     message = {
         'status': 500,
@@ -294,6 +208,7 @@ def do_save_response():
 
 @app.route('/invalid-responses', methods=['GET'])
 def do_get_invalid_responses():
+    '''Returns every invalid response in the database'''
     page = get_responses(invalid=True)
     return jsonify([item.to_dict() for item in page.items])
 

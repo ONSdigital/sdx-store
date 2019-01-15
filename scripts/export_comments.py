@@ -8,11 +8,9 @@ from openpyxl import Workbook
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.types import Boolean
-from sqlalchemy.dialects.postgresql import JSONB, UUID, TIMESTAMP
 
+from app.models import SurveyResponse
 import settings
 
 try:
@@ -23,33 +21,6 @@ try:
 except SQLAlchemyError as e:
     print(e)
     raise
-
-
-class SurveyResponse(base):
-    __tablename__ = 'responses'
-    tx_id = Column("tx_id",
-                   UUID,
-                   primary_key=True)
-
-    ts = Column("ts",
-                TIMESTAMP(timezone=True))
-
-    invalid = Column("invalid",
-                     Boolean,
-                     default=False)
-
-    data = Column("data", JSONB)
-
-    def __init__(self, tx_id, invalid, data):
-        self.tx_id = tx_id
-        self.invalid = invalid
-        self.data = data
-
-    def __repr__(self):
-        return '<SurveyResponse {}>'.format(self.tx_id)
-
-    def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 def create_comments_excel_file(survey_id, period, submissions):
