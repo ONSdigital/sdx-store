@@ -1,4 +1,5 @@
 ### Unreleased
+  - Refactor code so that everything doesn't live in server.py
 
 ### 3.7.1 2018-12-20
   - Fix /invalid-responses endpoint

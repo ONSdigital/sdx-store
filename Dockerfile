@@ -1,6 +1,6 @@
 FROM onsdigital/flask-crypto-queue
-ENV RUNTIME_PACKAGES="python3"
-ENV BUILD_PACKAGES="git curl build-essential python3-dev ca-certificates libssl-dev libffi-dev postgresql libpq-dev"
+
+ENTRYPOINT ./startup.sh
 
 COPY server.py /app/server.py
 COPY settings.py /app/settings.py
@@ -13,8 +13,5 @@ RUN mkdir -p /app/logs
 WORKDIR /app/
 EXPOSE 5000
 
-RUN apt-get update && apt-get install -y $RUNTIME_PACKAGES $BUILD_PACKAGES && curl -sS https://bootstrap.pypa.io/get-pip.py | python3
-
 RUN make build
 
-ENTRYPOINT ./startup.sh
