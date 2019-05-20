@@ -1,4 +1,5 @@
 ### Unreleased
+  - Remove python 3.4 and 3.5 from travis builds
 
 ### 3.8.0 2019-02-08
   - Refactor code so that everything doesn't live in server.py
