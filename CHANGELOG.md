@@ -1,5 +1,6 @@
 ### Unreleased
   - Remove python 3.4 and 3.5 from travis builds
+  - Update Jinja2 and urllib3 to fix security issue and test warnings
 
 ### 3.8.0 2019-02-08
   - Refactor code so that everything doesn't live in server.py
