@@ -30,8 +30,7 @@ class TestStoreService(unittest.TestCase):
     # Imitate what jsonify does in flask
     test_message_sorted = json.dumps(test_message_json,
                                      sort_keys=True,
-                                     indent=2,
-                                     separators=(', ', ': ')) + '\n'
+                                     separators=(',', ':')) + '\n'
 
     def setUp(self):
         self.app = server.app.test_client()
