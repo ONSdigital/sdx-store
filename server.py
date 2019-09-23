@@ -35,11 +35,9 @@ if os.getenv("CREATE_TABLES", False):
 
 def get_responses(tx_id=None, invalid=None):
     try:
-        schema(request.args)
+        schema(request.args.to_dict())
     except MultipleInvalid:
-        raise InvalidUsageError("Request args failed schema validation",
-                                status_code=400,
-                                payload=request.args)
+        raise InvalidUsageError("Request args failed schema validation", payload=request.args)
 
     page = request.args.get('page', type=int, default=1)
     per_page = request.args.get('per_page', type=int, default=100)
@@ -141,7 +139,7 @@ def test_sql(connection):
 
 
 @app.errorhandler(500)
-def server_error(error=None):
+def server_error(error):
     '''Handles the building and returning of a response in the case of an error'''
     logger.error(error, status=500)
     message = {
@@ -155,7 +153,7 @@ def server_error(error=None):
 
 
 @app.errorhandler(InvalidUsageError)
-def invalid_usage_error(error=None):
+def invalid_usage_error(error):
     logger.error(error.message, status=400, payload=error.payload)
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
@@ -253,8 +251,7 @@ def healthcheck():
         conn = db.engine.connect()
         test_sql(conn)
     except SQLAlchemyError:
-        logger.error("Failed to connect to database")
-        return server_error(500)
+        return server_error("Failed to connect to database")
     else:
         return jsonify({'status': 'OK'})
 

@@ -1,4 +1,5 @@
 ### Unreleased
+  - Update packages to bring them in line with other SDX repos
 
 ### 3.9.1 2019-05-31
   - Removed unused cryptography package
