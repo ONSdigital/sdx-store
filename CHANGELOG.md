@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 3.9.2 2019-09-26
   - Update packages to bring them in line with other SDX repos
 
 ### 3.9.1 2019-05-31
