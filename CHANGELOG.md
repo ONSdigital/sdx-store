@@ -1,4 +1,5 @@
 ### Unreleased
+  - Add python 3.8 to travis builds
 
 ### 3.9.2 2019-09-26
   - Update packages to bring them in line with other SDX repos
