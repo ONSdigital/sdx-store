@@ -154,7 +154,7 @@ def server_error(error):
 
 @app.errorhandler(InvalidUsageError)
 def invalid_usage_error(error):
-    logger.error(error.message, status=400, payload=error.payload)
+    logger.error(error.message, status=400, payload=error.payload, url=request.url)
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response

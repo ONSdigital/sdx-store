@@ -1,5 +1,6 @@
 ### Unreleased
   - Add python 3.8 to travis builds
+  - Add url to logging metadata on an InvalidUsageError exception
 
 ### 3.9.2 2019-09-26
   - Update packages to bring them in line with other SDX repos
