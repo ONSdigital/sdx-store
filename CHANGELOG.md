@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 3.9.3 2019-11-08
   - Add python 3.8 to travis builds
   - Add url to logging metadata on an InvalidUsageError exception
 
