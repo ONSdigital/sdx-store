@@ -41,7 +41,7 @@ There are six endpoints:
  * `POST /responses` - store a json survey response
  * `GET /responses` - retrieve a JSON response of all valid survey responses in the connected responses.
  * `GET /responses/<tx_id>` - retrieve a survey by id
- * `POST /delete-old` - delete responses older than a number of days set in config 
+ * `POST /responses/delete-old` - delete responses older than a number of days set in config 
 
 ### Query Parameters
 
@@ -66,7 +66,7 @@ Some of important environment variables available for configuration are listed b
 | RABBITMQ_DEFAULT_VHOST  | `%2f`                                 | RabbitMQ virtual host
 | RABBITMQ_HOST2          | `rabbit`                              | RabbitMQ name
 | RABBITMQ_PORT2          | `rabbit`                              | RabbitMQ port
-
+| SDX_STORE_RESPONSE_RETENTION_DAYS |  `90`                       | Youngest response that will get deleted
 
 ### License
 
