@@ -35,7 +35,7 @@ class TestStoreService(unittest.TestCase):
         'invalid': '/invalid-responses',
         'queue': '/queue',
         'healthcheck': '/healthcheck',
-        'delete-old': '/delete-old'
+        'delete-old': '/responses/delete-old'
     }
 
     logger = wrap_logger(logging.getLogger("TEST"))
@@ -250,7 +250,7 @@ class TestStoreService(unittest.TestCase):
         self.assertEqual(r.status_code, 500)
 
     def test_delete_old_does_not_delete_records_younger_than_response_retention_days(self):
-        self.app.post(self.endpoints['responses'],
+        self.app.post(self.endpoints['delete-old'],
                       data=second_test_message,
                       content_type='application/json')
 

@@ -244,7 +244,7 @@ def do_get_response(tx_id):
         return jsonify({}), 404
 
 
-@app.route('/delete-old', methods=['POST'])
+@app.route('/responses/delete-old', methods=['POST'])
 def delete_old_responses():
     """Deletes responses that are older than the number of days set in config
     Config use is a compromise for safety in case incorrect parameters are passed.
