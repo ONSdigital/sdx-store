@@ -35,7 +35,7 @@ def create_comments_excel_file(survey_id, period, submissions):
         comment = submission.data['data'].get('146')
 
         boxes_selected = ""
-        for key in ('146' + letter for letter in ascii_lowercase[1:]):
+        for key in ('146' + letter for letter in ascii_lowercase[0:]):
             if key in submission.data['data'].keys():
                 boxes_selected = boxes_selected + key + ' '
 
@@ -48,25 +48,22 @@ def create_comments_excel_file(survey_id, period, submissions):
         ws.cell(row, 3, boxes_selected)
         ws.cell(row, 4, comment)
 
-    ws.cell(1, 1, "Survey ID: {}".format(survey_id))
-    ws.cell(1, 2, "Comments found: {}".format(surveys_with_comments_count))
-    print("{} out of {} submissions had comments".format(surveys_with_comments_count, len(submissions)))
+    ws.cell(1, 1, f"Survey ID: {survey_id}")
+    ws.cell(1, 2, f"Comments found: {surveys_with_comments_count}")
+    print(f"{surveys_with_comments_count} out of {len(submissions)} submissions had comments")
 
-    parent_dir_path = os.path.dirname(
-        os.path.dirname(os.path.realpath(__file__)))
-    filename = os.path.join(parent_dir_path, "{}_{}.xlsx".format(survey_id, period))
+    parent_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    filename = os.path.join(parent_dir_path, f"{survey_id}_{period}.xlsx")
     workbook.save(filename)
     workbook.close()
-    print("Excel file {} generated".format(filename))
+    print(f"Excel file {filename} generated")
 
 
 def get_all_submissions(survey_id, period):
     """Get all submissions that match the survey_id and period supplied"""
-    survey_records = session.query(SurveyResponse).filter(
-        SurveyResponse.data['survey_id'].astext == survey_id)
-    records = survey_records.filter(
-        SurveyResponse.data['collection']['period'].astext == period).all()
-    print("Retrieved {} submissions".format(len(records)))
+    survey_records = session.query(SurveyResponse).filter(SurveyResponse.data['survey_id'].astext == survey_id)
+    records = survey_records.filter(SurveyResponse.data['collection']['period'].astext == period).all()
+    print(f"Retrieved {len(records)} submissions")
     return records
 
 
@@ -77,8 +74,8 @@ if __name__ == "__main__":
     survey_id = sys.argv[1]
     period = sys.argv[2]
 
-    print('Survey id is {}'.format(survey_id))
-    print('Period is {}'.format(period))
+    print(f'Survey id is {survey_id}')
+    print(f'Period is {period}')
 
     try:
         submissions = get_all_submissions(survey_id, period)
