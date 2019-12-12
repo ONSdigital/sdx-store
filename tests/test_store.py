@@ -227,12 +227,12 @@ class TestStoreService(unittest.TestCase):
             self.assertEqual(r.status_code, 500)
             self.assertEqual(r.json, {'message': 'Failed to connect to database', 'status': 500})
 
-    def test_delete_old_returns_200_for_no_deletes(self):
+    def test_delete_old_returns_204_for_no_deletes(self):
         settings.RESPONSE_RETENTION_DAYS = 90
         r = self.app.post(self.endpoints['delete-old'])
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 204)
 
-    def test_delete_old_returns_200_when_records_deleted(self):
+    def test_delete_old_returns_204_when_records_deleted(self):
         self.app.post(self.endpoints['responses'],
                       data=second_test_message,
                       content_type='application/json')
@@ -242,7 +242,7 @@ class TestStoreService(unittest.TestCase):
                       content_type='application/json')
         settings.RESPONSE_RETENTION_DAYS = -2  # Set retention negative so that all added records will get deleted
         r = self.app.post(self.endpoints['delete-old'])
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 204)
 
     def test_delete_old_returns_500_if_not_set_in_config(self):
         settings.RESPONSE_RETENTION_DAYS = None
@@ -259,4 +259,4 @@ class TestStoreService(unittest.TestCase):
                       content_type='application/json')
         settings.RESPONSE_RETENTION_DAYS = 1
         r = self.app.post(self.endpoints['delete-old'])
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 204)
