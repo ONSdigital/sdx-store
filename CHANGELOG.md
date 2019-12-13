@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 3.9.4 2019-12-13
   - Amend comments script to handle '146a'
 
 ### 3.9.3 2019-11-08
