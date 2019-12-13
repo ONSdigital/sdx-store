@@ -1,6 +1,9 @@
 ### Unreleased
   - Added delete old end point
 
+### 3.9.4 2019-12-13
+  - Amend comments script to handle '146a'
+
 ### 3.9.3 2019-11-08
   - Add python 3.8 to travis builds
   - Add url to logging metadata on an InvalidUsageError exception
