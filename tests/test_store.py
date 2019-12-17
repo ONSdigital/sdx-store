@@ -35,7 +35,7 @@ class TestStoreService(unittest.TestCase):
         'invalid': '/invalid-responses',
         'queue': '/queue',
         'healthcheck': '/healthcheck',
-        'delete-old': '/responses/delete-old'
+        'old': '/responses/old'
     }
 
     logger = wrap_logger(logging.getLogger("TEST"))
@@ -229,34 +229,38 @@ class TestStoreService(unittest.TestCase):
 
     def test_delete_old_returns_204_for_no_deletes(self):
         settings.RESPONSE_RETENTION_DAYS = 90
-        r = self.app.post(self.endpoints['delete-old'])
+        r = self.app.delete(self.endpoints['old'])
         self.assertEqual(r.status_code, 204)
 
     def test_delete_old_returns_204_when_records_deleted(self):
-        self.app.post(self.endpoints['responses'],
-                      data=second_test_message,
-                      content_type='application/json')
+        with self.assertLogs(level='INFO') as cm:
+            self.app.post(self.endpoints['responses'],
+                          data=second_test_message,
+                          content_type='application/json')
 
-        self.app.post(self.endpoints['responses'],
-                      data=test_message,
-                      content_type='application/json')
-        settings.RESPONSE_RETENTION_DAYS = -2  # Set retention negative so that all added records will get deleted
-        r = self.app.post(self.endpoints['delete-old'])
-        self.assertEqual(r.status_code, 204)
+            self.app.post(self.endpoints['responses'],
+                          data=test_message,
+                          content_type='application/json')
+            settings.RESPONSE_RETENTION_DAYS = -2  # Set retention negative so that all added records will get deleted
+            r = self.app.delete(self.endpoints['old'])
+            self.assertEqual(r.status_code, 204)
+            self.assertIn('Old submissions deleted        count=2', cm.output[4])
 
     def test_delete_old_returns_500_if_not_set_in_config(self):
         settings.RESPONSE_RETENTION_DAYS = None
-        r = self.app.post(self.endpoints['delete-old'])
+        r = self.app.delete(self.endpoints['old'])
         self.assertEqual(r.status_code, 500)
 
     def test_delete_old_does_not_delete_records_younger_than_response_retention_days(self):
-        self.app.post(self.endpoints['delete-old'],
-                      data=second_test_message,
-                      content_type='application/json')
+        with self.assertLogs(level='INFO') as cm:
+            self.app.post(self.endpoints['responses'],
+                          data=second_test_message,
+                          content_type='application/json')
 
-        self.app.post(self.endpoints['responses'],
-                      data=test_message,
-                      content_type='application/json')
-        settings.RESPONSE_RETENTION_DAYS = 1
-        r = self.app.post(self.endpoints['delete-old'])
-        self.assertEqual(r.status_code, 204)
+            self.app.post(self.endpoints['responses'],
+                          data=test_message,
+                          content_type='application/json')
+            settings.RESPONSE_RETENTION_DAYS = 1
+            r = self.app.delete(self.endpoints['old'])
+            self.assertEqual(r.status_code, 204)
+            self.assertIn('Old submissions deleted        count=0', cm.output[4])

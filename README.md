@@ -41,7 +41,7 @@ There are six endpoints:
  * `POST /responses` - store a json survey response
  * `GET /responses` - retrieve a JSON response of all valid survey responses in the connected responses.
  * `GET /responses/<tx_id>` - retrieve a survey by id
- * `POST /responses/delete-old` - delete responses older than a number of days set in config 
+ * `DELETE /responses/old` - delete responses older than a number of days set in config 
 
 ### Query Parameters
 
