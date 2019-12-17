@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import os
 import uuid
@@ -11,7 +12,7 @@ from werkzeug.exceptions import BadRequest
 from app.exceptions import InvalidUsageError
 from app.models import FeedbackResponse, SurveyResponse
 from app import app, db, logger
-
+import settings
 
 schema = Schema({
     'added_ms': Coerce(int),
@@ -241,6 +242,36 @@ def do_get_response(tx_id):
             return jsonify({}), 404
     else:
         return jsonify({}), 404
+
+
+@app.route('/responses/old', methods=['DELETE'])
+def delete_old_responses():
+    """Deletes responses that are older than the number of days set in config
+    Config use is a compromise for safety in case incorrect parameters are passed.
+    """
+    try:
+        response_retention_days = int(settings.RESPONSE_RETENTION_DAYS)
+
+        # Get the cut off date
+        time_delta = datetime.timedelta(days=response_retention_days)
+        cut_off_date = datetime.datetime.utcnow() - time_delta
+
+        # Set time element of cut off date to 0:0:0.0
+        cut_off_date = cut_off_date.combine(cut_off_date.date(),
+                                            datetime.time(hour=0, minute=0, second=0, microsecond=0, tzinfo=None))
+
+        deleted_count = db.session.query(SurveyResponse).filter(SurveyResponse.ts < cut_off_date) \
+            .delete(synchronize_session=False)
+        db.session.commit()
+
+        logger.info('Old submissions deleted', count=deleted_count, cut_off_date=cut_off_date.strftime('%Y-%d-%m'))
+
+    except SQLAlchemyError:
+        return server_error("Database error")
+    except TypeError:  # Thrown if RESPONSE_RETENTION_DAYS is not set
+        return server_error('Response retention days not configured')
+
+    return jsonify({}), 204
 
 
 @app.route('/info', methods=['GET'])

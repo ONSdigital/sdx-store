@@ -1,4 +1,5 @@
 ### Unreleased
+  - Added delete old end point
 
 ### 3.9.4 2019-12-13
   - Amend comments script to handle '146a'
