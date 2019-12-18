@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 3.10.0 2019-12-18
   - Added delete old end point
 
 ### 3.9.4 2019-12-13
