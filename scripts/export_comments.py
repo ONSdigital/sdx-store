@@ -66,6 +66,7 @@ def get_all_submissions(survey_id, period):
     print(f"Retrieved {len(records)} submissions")
     return records
 
+
 def get_comment_text(submission):
     """Returns the respondent typed text from a submission.  The qcode for this text will be different depending
     on the survey
