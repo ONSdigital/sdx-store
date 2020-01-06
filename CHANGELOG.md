@@ -1,4 +1,5 @@
 ### Unreleased
+  - Amend comment script to display respondent entered comments for MBS (009)
   - Added delete old end point
 
 ### 3.9.4 2019-12-13
