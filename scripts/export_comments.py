@@ -32,7 +32,7 @@ def create_comments_excel_file(survey_id, period, submissions):
     ws = workbook.active
 
     for submission in submissions:
-        comment = submission.data['data'].get('146')
+        comment = get_comment_text(submission)
 
         boxes_selected = ""
         for key in ('146' + letter for letter in ascii_lowercase[0:]):
@@ -65,6 +65,14 @@ def get_all_submissions(survey_id, period):
     records = survey_records.filter(SurveyResponse.data['collection']['period'].astext == period).all()
     print(f"Retrieved {len(records)} submissions")
     return records
+
+def get_comment_text(submission):
+    """Returns the respondent typed text from a submission.  The qcode for this text will be different depending
+    on the survey
+    """
+    if submission.data['survey_id'] == '009':
+        return submission.data['data'].get('146h')
+    return submission.data['data'].get('146')
 
 
 if __name__ == "__main__":
