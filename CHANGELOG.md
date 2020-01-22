@@ -1,6 +1,7 @@
 ### Unreleased
   - Amend comment script to display respondent entered comments for MBS (009)
   - Added delete old end point
+  - Added code to return significant changes comments for MWSS and ECommerce
 
 ### 3.9.4 2019-12-13
   - Amend comments script to handle '146a'
