@@ -1,11 +1,11 @@
 ### Unreleased
+  - Added comment script to return significant changes comments for E-commerce (187)
 
 ### 3.11.0 2020-01-27
   - Amend comment script to display respondent entered comments for MBS (009)
 
 ### 3.10.0 2019-12-18
   - Added delete old end point
-  - Added comment script to return significant changes comments for E-commerce (187)
 
 ### 3.9.4 2019-12-13
   - Amend comments script to handle '146a'
