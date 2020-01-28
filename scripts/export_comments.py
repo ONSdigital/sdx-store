@@ -35,12 +35,7 @@ def create_comments_excel_file(survey_id, period, submissions):
         comment = get_comment_text(submission)
 
         boxes_selected = ""
-
-        reason_keys = ['146' + letter for letter in ascii_lowercase[0:]]
-        if submission.data['survey_id'] == '134':
-            reason_keys = ['191w5', '192w51', '192w52', '194w51', '194w52', '195w5', '196w5', '197w5']
-
-        for key in reason_keys:
+        for key in ('146' + letter for letter in ascii_lowercase[0:]):
             if key in submission.data['data'].keys():
                 boxes_selected = boxes_selected + key + ' '
 
@@ -78,8 +73,6 @@ def get_comment_text(submission):
     """
     if submission.data['survey_id'] == '009':
         return submission.data['data'].get('146h')
-    if submission.data['survey_id'] == '134':
-        return submission.data['data'].get('300w5')
     if submission.data['survey_id'] == '187':
         return submission.data['data'].get('500')
     return submission.data['data'].get('146')
