@@ -1,4 +1,5 @@
 ### Unreleased
+  - Added comment script to return significant changes comments for E-commerce (187)
 
 ### 3.11.0 2020-01-27
   - Amend comment script to display respondent entered comments for MBS (009)

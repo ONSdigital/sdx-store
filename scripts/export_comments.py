@@ -73,6 +73,8 @@ def get_comment_text(submission):
     """
     if submission.data['survey_id'] == '009':
         return submission.data['data'].get('146h')
+    if submission.data['survey_id'] == '187':
+        return submission.data['data'].get('500')
     return submission.data['data'].get('146')
 
 
