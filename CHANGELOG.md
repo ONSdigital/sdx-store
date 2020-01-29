@@ -1,4 +1,6 @@
 ### Unreleased
+
+### 3.12.0 2020-01-30
   - Added comment script to return significant changes comments for E-commerce (187)
 
 ### 3.11.0 2020-01-27
