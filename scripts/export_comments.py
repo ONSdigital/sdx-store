@@ -61,9 +61,17 @@ def create_comments_excel_file(survey_id, period, submissions):
 
 def get_all_submissions(survey_id, period):
     """Get all submissions that match the survey_id and period supplied"""
+    if survey_id == '181':
+        vacancies_records = []
+        for survey_id in ['182', '183', '184', '185']:
+            survey_records = session.query(SurveyResponse).filter(SurveyResponse.data['survey_id'].astext == survey_id)
+            period_specific_records = survey_records.filter(SurveyResponse.data['collection']['period'].astext == period).all()
+            vacancies_records = vacancies_records + period_specific_records
+            print(f"Retrieved {len(period_specific_records)} submissions for {survey_id}")
+        return vacancies_records
     survey_records = session.query(SurveyResponse).filter(SurveyResponse.data['survey_id'].astext == survey_id)
     records = survey_records.filter(SurveyResponse.data['collection']['period'].astext == period).all()
-    print(f"Retrieved {len(records)} submissions")
+    print(f"Retrieved {len(records)} submissions for {survey_id}")
     return records
 
 
