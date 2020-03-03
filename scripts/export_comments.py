@@ -47,9 +47,29 @@ def create_comments_excel_file(survey_id, period, submissions):
         ws.cell(row, 2, submission.data['collection']['period'])
         ws.cell(row, 3, boxes_selected)
         ws.cell(row, 4, comment)
+        if survey_id == '134':
+            ws.cell(row, 5, submission.data['data']['300w'])
+            ws.cell(row, 6, submission.data['data']['300f'])
+            ws.cell(row, 7, submission.data['data']['300m'])
+            ws.cell(row, 8, submission.data['data']['300w4'])
+            ws.cell(row, 9, submission.data['data']['300w5'])
+
+            checkboxes = ['91w', '92w1', '92w2', '94w1', '94w2', '95w', '96w', '97w', '91f', '92f1', '92f2', '94f1', '94f2', '95f', '96f', '97f', '191m', '192m1', '192m2', '194m1', '194m2', '195m', '196m', '197m', '191w4', '192w41', '192w42', '194w41', '194w42', '195w4', '196w4', '197w4', '191w5', '192w51', '192w52', '194w51', '194w52', '195w5', '196w5', '197w5']
+            filled_checkboxes = ""
+            for checkbox in checkboxes:
+                if checkbox in submission.data['data']:
+                    filled_checkboxes = filled_checkboxes + f"{checkbox}, "
+            ws.cell(row, 10, filled_checkboxes)
 
     ws.cell(1, 1, f"Survey ID: {survey_id}")
     ws.cell(1, 2, f"Comments found: {surveys_with_comments_count}")
+    if survey_id == '134':
+        ws.cell(1, 5, f"Weekly")
+        ws.cell(1, 6, f"Fortnightly")
+        ws.cell(1, 7, f"Calendar Monthly")
+        ws.cell(1, 8, f"4 Weekly Pay")
+        ws.cell(1, 9, f"5 Weekly Pay")
+
     print(f"{surveys_with_comments_count} out of {len(submissions)} submissions had comments")
 
     parent_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -83,6 +103,8 @@ def get_comment_text(submission):
         return submission.data['data'].get('146h')
     if submission.data['survey_id'] == '187':
         return submission.data['data'].get('500')
+    if submission.data['survey_id'] == '134':
+        return submission.data['data'].get('300')
     return submission.data['data'].get('146')
 
 
