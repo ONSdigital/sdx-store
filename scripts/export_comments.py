@@ -61,8 +61,8 @@ def create_comments_excel_file(survey_id, period, submissions):
             checkboxes = ['91w', '92w1', '92w2', '94w1', '94w2', '95w', '96w', '97w',
                           '91f', '92f1', '92f2', '94f1', '94f2', '95f', '96f', '97f',
                           '191m', '192m1', '192m2', '194m1', '194m2', '195m', '196m', '197m',
-                          '191w4', '192w41', '192w42', '194w41', '194w42', '195w4', '196w4',
-                          '197w4', '191w5', '192w51', '192w52', '194w51', '194w52', '195w5', '196w5', '197w5']
+                          '191w4', '192w41', '192w42', '194w41', '194w42', '195w4', '196w4', '197w4',
+                          '191w5', '192w51', '192w52', '194w51', '194w52', '195w5', '196w5', '197w5']
             filled_checkboxes = ""
             for checkbox in checkboxes:
                 if checkbox in submission.data['data']:
