@@ -67,7 +67,6 @@ def create_comments_excel_file(survey_id, period, submissions):
         ws.cell(row, 3, boxes_selected)
         ws.cell(row, 4, comment)
 
-
     ws.cell(1, 1, f"Survey ID: {survey_id}")
     ws.cell(1, 2, f"Comments found: {surveys_with_comments_count}")
     if survey_id == '134':
