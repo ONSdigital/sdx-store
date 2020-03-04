@@ -72,11 +72,11 @@ def create_comments_excel_file(survey_id, period, submissions):
     ws.cell(1, 1, f"Survey ID: {survey_id}")
     ws.cell(1, 2, f"Comments found: {surveys_with_comments_count}")
     if survey_id == '134':
-        ws.cell(1, 5, f"Weekly")
-        ws.cell(1, 6, f"Fortnightly")
-        ws.cell(1, 7, f"Calendar Monthly")
-        ws.cell(1, 8, f"4 Weekly Pay")
-        ws.cell(1, 9, f"5 Weekly Pay")
+        ws.cell(1, 5, "Weekly comment")
+        ws.cell(1, 6, "Fortnightly comment")
+        ws.cell(1, 7, "Calendar Monthly comment")
+        ws.cell(1, 8, "4 Weekly Pay comment")
+        ws.cell(1, 9, "5 Weekly Pay comment")
     print(f"{surveys_with_comments_count} out of {len(submissions)} submissions had comments")
 
     parent_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
