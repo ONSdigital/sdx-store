@@ -45,8 +45,6 @@ def create_comments_excel_file(survey_id, period, submissions):
         surveys_with_comments_count += 1
         ws.cell(row, 1, submission.data['metadata']['ru_ref'])
         ws.cell(row, 2, submission.data['collection']['period'])
-        ws.cell(row, 3, boxes_selected)
-        ws.cell(row, 4, comment)
         if survey_id == '134':
             if '300w' in submission.data['data']:
                 ws.cell(row, 5, submission.data['data']['300w'])
@@ -63,11 +61,12 @@ def create_comments_excel_file(survey_id, period, submissions):
                           '191m', '192m1', '192m2', '194m1', '194m2', '195m', '196m', '197m',
                           '191w4', '192w41', '192w42', '194w41', '194w42', '195w4', '196w4', '197w4',
                           '191w5', '192w51', '192w52', '194w51', '194w52', '195w5', '196w5', '197w5']
-            filled_checkboxes = ""
             for checkbox in checkboxes:
                 if checkbox in submission.data['data']:
-                    filled_checkboxes = filled_checkboxes + f"{checkbox}, "
-            ws.cell(row, 10, filled_checkboxes)
+                    boxes_selected = boxes_selected + f"{checkbox}, "
+        ws.cell(row, 3, boxes_selected)
+        ws.cell(row, 4, comment)
+
 
     ws.cell(1, 1, f"Survey ID: {survey_id}")
     ws.cell(1, 2, f"Comments found: {surveys_with_comments_count}")
