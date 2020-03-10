@@ -1,5 +1,10 @@
 ### Unreleased
 
+### 3.13.0 2020-03-10
+  - Significant changes comments for Vacancies.
+  - Replicate functionality of RSI with monthly cron job on Vacancies significant changes.
+  - Add MWSS to significant changes comment script
+
 ### 3.12.0 2020-01-30
   - Added comment script to return significant changes comments for E-commerce (187)
 
