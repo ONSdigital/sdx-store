@@ -1,4 +1,6 @@
 ### Unreleased
+  - Updated comment script to handle vacancies (182-185) and MWSS (134)
+  - Better handling of DataErrors that we get when null characters are in the submission
 
 ### 3.12.0 2020-01-30
   - Added comment script to return significant changes comments for E-commerce (187)
