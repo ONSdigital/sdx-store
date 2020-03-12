@@ -1,4 +1,6 @@
 ### Unreleased
+  - Updated comment script to handle vacancies (182-185) and MWSS (134)
+  - Better handling of DataErrors that we get when null characters are in the submission
 
 ### 3.13.0 2020-03-10
   - Significant changes comments for Vacancies.

@@ -5,7 +5,7 @@ import uuid
 
 from flask import jsonify, request
 from sqlalchemy import inspect, select
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError, DataError
 from voluptuous import All, Coerce, MultipleInvalid, Range, Schema
 from werkzeug.exceptions import BadRequest
 
@@ -75,7 +75,7 @@ def merge(response):
 
 
 def object_as_dict(obj):
-    '''Converts a sqlalchemy object into a dictionary where the column names are the keys'''
+    """Converts a sqlalchemy object into a dictionary where the column names are the keys"""
     return {column.key: getattr(obj, column.key)
             for column in inspect(obj).mapper.column_attrs}
 
@@ -141,7 +141,7 @@ def test_sql(connection):
 
 @app.errorhandler(500)
 def server_error(error):
-    '''Handles the building and returning of a response in the case of an error'''
+    """Handles the building and returning of a response in the case of an error"""
     logger.error(error, status=500)
     message = {
         'status': 500,
@@ -155,7 +155,7 @@ def server_error(error):
 
 @app.errorhandler(InvalidUsageError)
 def invalid_usage_error(error):
-    logger.error(error.message, status=400, payload=error.payload, url=request.url)
+    logger.error(error.message, status_code=error.status_code, payload=error.payload, url=request.url)
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
@@ -194,8 +194,11 @@ def do_save_response():
 
         try:
             invalid = save_response(bound_logger, survey_response)
+
         except IntegrityError:
             return server_error("Integrity error")
+        except DataError:
+            raise InvalidUsageError("Invalid characters in payload", 400, payload={'contains_invalid_character': True})
         except SQLAlchemyError:
             return server_error("Database error")
 
@@ -207,7 +210,7 @@ def do_save_response():
 
 @app.route('/invalid-responses', methods=['GET'])
 def do_get_invalid_responses():
-    '''Returns every invalid response in the database'''
+    """Returns every invalid response in the database"""
     page = get_responses(invalid=True)
     return jsonify([item.to_dict() for item in page.items])
 
