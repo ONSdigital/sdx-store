@@ -1,11 +1,9 @@
 ### Unreleased
-  - Updated comment script to handle vacancies (182-185) and MWSS (134)
-  - Better handling of DataErrors that we get when null characters are in the submission
 
 ### 3.13.0 2020-03-10
-  - Significant changes comments for Vacancies.
-  - Replicate functionality of RSI with monthly cron job on Vacancies significant changes.
-  - Add MWSS to significant changes comment script
+  - Add Vacancies to significant changes comment script (182-185).
+  - Add MWSS to significant changes comment script (134)
+  - Better handling of DataErrors that we get when null characters are in the submission
 
 ### 3.12.0 2020-01-30
   - Added comment script to return significant changes comments for E-commerce (187)
