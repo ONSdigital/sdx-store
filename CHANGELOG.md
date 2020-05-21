@@ -1,8 +1,10 @@
 ### Unreleased
 
+### 3.13.2 2020-05-21
+  - Updated packages
+
 ### 3.13.1 2020-05-13
   - Remove Cloudfoundry deployment files
-  - Updated packages
 
 ### 3.13.0 2020-03-10
   - Add Vacancies to significant changes comment script (182-185).
