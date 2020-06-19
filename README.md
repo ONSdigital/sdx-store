@@ -9,29 +9,38 @@ Scalable service for storing SDX data (backed by PostgreSQL).
 A running instance of PostgreSQL.
 
 ## Installation
+This application presently installs required packages from requirements files:
+- `requirements.txt`: packages for the application, with hashes for all packages: see https://pypi.org/project/hashin/
+- `test-requirements.txt`: packages for testing and linting
 
-Using virtualenv, create a new environment, then install dependencies using:
+It's also best to use `pyenv` and `pyenv-virtualenv`, to build in a virtual environment with the currently recommended version of Python.  To install these, see:
+- https://github.com/pyenv/pyenv
+- https://github.com/pyenv/pyenv-virtualenv
+- (Note that the homebrew version of `pyenv` is easiest to install, but can lag behind the latest release of Python.)
 
-```bash
-make build
+### Getting started
+Once your virtual environment is set, install the requirements:
+```shell
+$ make build
 ```
 
-To run the test suite, use:
-
-```bash
-make test
+To test, first run `make build` as above, then run:
+```shell
+$ make test
 ```
 
 It's also possible to install within a container using docker. From the sdx-store directory:
-
-    $ docker build -t sdx-store .
+```shell
+$ docker build -t sdx-store .
+```
 
 ## Usage
 
 Start the sdx-store service using the following command:
 
-    make start
-
+```shell
+$ python server.py
+```
 ## API
 
 There are six endpoints:
@@ -73,3 +82,4 @@ Some of important environment variables available for configuration are listed b
 Copyright (c) 2016 Crown Copyright (Office for National Statistics)
 
 Released under MIT license, see [LICENSE](LICENSE) for details.
+
