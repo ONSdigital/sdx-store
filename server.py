@@ -118,6 +118,8 @@ def save_feedback_response(bound_logger, survey_feedback_response):
 
     try:
         db.session.add(feedback_response)
+        db.session.flush()
+        new_id = feedback_response.id
         db.session.commit()
     except IntegrityError as e:
         logger.error("Integrity error in database. Rolling back commit", error=e)
@@ -130,7 +132,7 @@ def save_feedback_response(bound_logger, survey_feedback_response):
     else:
         logger.info("Feedback response saved")
 
-    return invalid
+    return invalid, new_id
 
 
 def test_sql(connection):
@@ -178,7 +180,8 @@ def do_save_response():
         bound_logger = bound_logger.bind(response_type="feedback",
                                          survey_id=survey_response.get("survey_id"))
         try:
-            save_feedback_response(bound_logger, survey_response)
+            feedback = save_feedback_response(bound_logger, survey_response)
+            print("id id: ", feedback[1])
         except IntegrityError:
             return server_error("Integrity error")
         except SQLAlchemyError:
@@ -224,6 +227,12 @@ def do_get_responses():
     except AttributeError:
         logger.exception("No items in page")
         return jsonify({}), 404
+
+
+@app.route('/feedback_responses/<id>', methods=['GET'])
+def do_get_feedback(feedback_response):
+    if feedback_response.find("feedback") != -1:
+        print("THIS IS FEEDBACK")
 
 
 @app.route('/responses/<tx_id>', methods=['GET'])
