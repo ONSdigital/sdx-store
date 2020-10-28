@@ -176,12 +176,16 @@ def do_save_response():
 
     response_type = str(survey_response.get('type'))
 
+    result = {'tx_id': survey_response.get('tx_id'),
+              'is_feedback': False}
+
     if response_type.find("feedback") != -1:
         bound_logger = bound_logger.bind(response_type="feedback",
                                          survey_id=survey_response.get("survey_id"))
         try:
             feedback = save_feedback_response(bound_logger, survey_response)
-            print("id id: ", feedback[1])
+            result['is_feedback'] = True
+            result['feedback_id'] = feedback[1]
         except IntegrityError:
             return server_error("Integrity error")
         except SQLAlchemyError:
@@ -208,7 +212,7 @@ def do_save_response():
         if invalid:
             return jsonify(invalid)
 
-    return jsonify(result="ok")
+    return jsonify(result)
 
 
 @app.route('/invalid-responses', methods=['GET'])
