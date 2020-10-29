@@ -56,6 +56,17 @@ def get_responses(tx_id=None, invalid=None):
                      error=e)
 
 
+def get_feedback(feedback_id):
+    try:
+        r = FeedbackResponse.query.filter_by(id=feedback_id)
+        logger.info("Retrieved feedback from db")
+        return r
+    except SQLAlchemyError as e:
+        logger.error("Could not retrieve results from db",
+                     id=feedback_id,
+                     error=e)
+
+
 # pylint: disable=maybe-no-member
 def merge(response):
     try:
@@ -233,10 +244,25 @@ def do_get_responses():
         return jsonify({}), 404
 
 
-@app.route('/feedback_responses/<id>', methods=['GET'])
-def do_get_feedback(feedback_response):
-    if feedback_response.find("feedback") != -1:
-        print("THIS IS FEEDBACK")
+@app.route('/feedback/<feedback_id>', methods=['GET'])
+def do_get_feedback(feedback_id):
+    try:
+        int(feedback_id)
+    except ValueError:
+        raise InvalidUsageError("feedback_id supplied is not a valid id", 400)
+
+    result = get_feedback(feedback_id=feedback_id)
+    if result:
+        try:
+            result_dict = object_as_dict(result.items[0])['data']
+            response = jsonify(result_dict)
+            response.headers['Content-MD5'] = hashlib.md5(response.data).hexdigest()
+            return response
+        except IndexError:
+            logger.exception('Empty items list in result.')
+            return jsonify({}), 404
+    else:
+        return jsonify({}), 404
 
 
 @app.route('/responses/<tx_id>', methods=['GET'])
