@@ -252,10 +252,10 @@ def do_get_feedback(feedback_id):
         raise InvalidUsageError("feedback_id supplied is not a valid id", 400)
 
     result = get_feedback(feedback_id=feedback_id)
+
     if result:
         try:
-            result_dict = object_as_dict(result.items[0])['data']
-            response = jsonify(result_dict)
+            response = jsonify(result[0].data)
             response.headers['Content-MD5'] = hashlib.md5(response.data).hexdigest()
             return response
         except IndexError:
@@ -273,6 +273,7 @@ def do_get_response(tx_id):
         raise InvalidUsageError("tx_id supplied is not a valid UUID", 400)
 
     result = get_responses(tx_id=tx_id)
+    logger.info('result: {}'.format(result))
     if result:
         try:
             result_dict = object_as_dict(result.items[0])['data']
