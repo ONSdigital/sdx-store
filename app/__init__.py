@@ -6,7 +6,7 @@ from structlog import wrap_logger
 
 import settings
 
-__version__ = "3.13.2"
+__version__ = "3.14.0"
 
 logging.basicConfig(format=settings.LOGGING_FORMAT,
                     datefmt="%Y-%m-%dT%H:%M:%S",
