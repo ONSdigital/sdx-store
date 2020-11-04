@@ -48,10 +48,6 @@ class TestStoreService(unittest.TestCase):
                                      separators=(',', ':')) + '\n'
 
     feedback_id_tag_json = json.loads(feedback_id_tag)
-    # Imitate what jsonify does in flask
-    feedback_id_tag_sorted = json.dumps(feedback_id_tag_json,
-                                     sort_keys=True,
-                                     separators=(',', ':')) + '\n'
 
     def setUp(self):
         self.app = server.app.test_client()
@@ -127,8 +123,6 @@ class TestStoreService(unittest.TestCase):
         """Endpoint should return 400 if the feedback_ID is not a valid int"""
         r = self.app.get(self.endpoints['feedback'] + '/123s')
         assert r.status_code == 400
-        s = self.feedback_id_tag_json['is_feedback']
-        print(s)
 
     def test_get_feedback_ID_404_if_ID_not_stored(self):
         """Endpoint should return 404 if the feedback_ID is not stored"""
