@@ -10,7 +10,7 @@ import testing.postgresql
 
 import settings
 from tests.test_data import invalid_message, test_message, second_test_message, missing_tx_id_message
-from tests.test_data import test_feedback_message, invalid_feedback_message
+from tests.test_data import test_feedback_message, invalid_feedback_message, feedback_id_tag
 
 import server
 from server import db, InvalidUsageError, logger
@@ -44,6 +44,12 @@ class TestStoreService(unittest.TestCase):
     test_message_json = json.loads(test_message)
     # Imitate what jsonify does in flask
     test_message_sorted = json.dumps(test_message_json,
+                                     sort_keys=True,
+                                     separators=(',', ':')) + '\n'
+
+    feedback_id_tag_json = json.loads(feedback_id_tag)
+    # Imitate what jsonify does in flask
+    feedback_id_tag_sorted = json.dumps(feedback_id_tag_json,
                                      sort_keys=True,
                                      separators=(',', ':')) + '\n'
 
@@ -118,12 +124,14 @@ class TestStoreService(unittest.TestCase):
 
     # /feedback/<feedback_id> GET
     def test_get_feedback_ID_400_if_not_a_valid_INT(self):
-        """Endpoint should return 400 if the feedback_ID is not a format"""
-        r = self.app.get(self.endpoints['feedback'] + '/im a string')
+        """Endpoint should return 400 if the feedback_ID is not a valid int"""
+        r = self.app.get(self.endpoints['feedback'] + '/123s')
         assert r.status_code == 400
+        s = self.feedback_id_tag_json['is_feedback']
+        print(s)
 
     def test_get_feedback_ID_404_if_ID_not_stored(self):
-        """Endpoint should return 200 if the feedback_ID is a format type: Int"""
+        """Endpoint should return 404 if the feedback_ID is not stored"""
         r = self.app.get(self.endpoints['feedback'] + '/123')
         assert r.status_code == 404
 
