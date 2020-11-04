@@ -52,7 +52,6 @@ paths:
           $ref: '#/components/responses/SurveyList'
         500:
           $ref: '#/components/responses/ServerError'
-
   /responses/{tx_id}:
     get:
       summary: Retrieve response with tx_id
@@ -74,6 +73,19 @@ paths:
       responses:
         204:
           description: Ran succesfully
+        500:
+          $ref: '#/components/responses/ServerError'
+  /feedback/{feedback_id}:
+    get:
+      summary: Retrieve response with feedback_id
+      description: Retrieve response with feedback_id as json
+      parameters:
+        - $ref: '#/components/parameters/feedback_id'
+      responses:
+        200:
+          $ref: '#/components/requestBodies/Survey'
+        400:
+          $ref: '#/components/responses/InvalidUsageError'
         500:
           $ref: '#/components/responses/ServerError'
 

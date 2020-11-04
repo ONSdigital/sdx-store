@@ -12,3 +12,4 @@ coverage.xml
 .coverage
 .idea
 htmlcov/
+Pipfile

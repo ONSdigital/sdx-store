@@ -35,7 +35,8 @@ class TestStoreService(unittest.TestCase):
         'invalid': '/invalid-responses',
         'queue': '/queue',
         'healthcheck': '/healthcheck',
-        'old': '/responses/old'
+        'old': '/responses/old',
+        'feedback': '/feedback'
     }
 
     logger = wrap_logger(logging.getLogger("TEST"))
@@ -114,6 +115,17 @@ class TestStoreService(unittest.TestCase):
                           content_type='application/json')
         assert r.status_code == 200
         assert r.data == b'true\n'
+
+    # /feedback/<feedback_id> GET
+    def test_get_feedback_ID_400_if_not_a_valid_INT(self):
+        """Endpoint should return 400 if the feedback_ID is not a format"""
+        r = self.app.get(self.endpoints['feedback'] + '/im a string')
+        assert r.status_code == 400
+
+    def test_get_feedback_ID_404_if_ID_not_stored(self):
+        """Endpoint should return 200 if the feedback_ID is a format type: Int"""
+        r = self.app.get(self.endpoints['feedback'] + '/123')
+        assert r.status_code == 404
 
     # /responses/<tx_id> GET
     def test_get_id_returns_400_if_not_a_valid_uuid(self):
