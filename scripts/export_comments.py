@@ -105,7 +105,7 @@ def get_comment_text(submission):
     on the survey
     """
     if submission.data['survey_id'] == '009':
-        return submission.data['data'].get('146h')
+        return submission.data['data'].get('146')
     if submission.data['survey_id'] == '187':
         return submission.data['data'].get('500')
     if submission.data['survey_id'] == '134':
