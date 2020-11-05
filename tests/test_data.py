@@ -171,6 +171,6 @@ feedback_decrypted = '''
 }
 '''
 
-feedback_id_tag = '{"tx_id": "0f534ffc-9442-414c-b39f-a756b4adc6cb","is_feedback":true,"feedback_id":123}'
+feedback_id_tag = '{"tx_id": "0f534ffc-9442-414c-b39f-a756b4adc6cb","is_feedback":true,"feedback_id":1}'
 
 valid_id_tag = '{"tx_id": "0f534ffc-9442-414c-b39f-a756b4adc6cb","is_feedback":false}'

@@ -1,5 +1,6 @@
-### Unreleased
-  - ad openapi.yml
+### 3.12.3 2020-11-5
+  - automated feedback changes implemented.
+  - feedback/<feedback_id> GET end point added and tested
 
 ### 3.13.2 2020-05-21
   - Updated packages
