@@ -187,21 +187,21 @@ def do_save_response():
 
     response_type = str(survey_response.get('type'))
 
-    result = {'tx_id': survey_response.get('tx_id'),
-              'is_feedback': False}
+    result = {'tx_id': survey_response.get('tx_id')}
 
     if response_type.find("feedback") != -1:
         bound_logger = bound_logger.bind(response_type="feedback",
                                          survey_id=survey_response.get("survey_id"))
+        result['feedback'] = True
         try:
             feedback = save_feedback_response(bound_logger, survey_response)
-            result['is_feedback'] = True
             result['feedback_id'] = feedback[1]
         except IntegrityError:
             return server_error("Integrity error")
         except SQLAlchemyError:
             return server_error("Database error")
     else:
+        result['feedback'] = False
         try:
             metadata = survey_response['metadata']
         except KeyError:
@@ -259,7 +259,7 @@ def do_get_feedback(feedback_id):
             response.headers['Content-MD5'] = hashlib.md5(response.data).hexdigest()
             return response
         except IndexError:
-            logger.exception('Empty items list in result.')
+            logger.info('Empty items list in result.')
             return jsonify({}), 404
     else:
         return jsonify({}), 404
