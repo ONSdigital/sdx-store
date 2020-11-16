@@ -56,6 +56,17 @@ def get_responses(tx_id=None, invalid=None):
                      error=e)
 
 
+def get_feedback(feedback_id):
+    try:
+        r = FeedbackResponse.query.filter_by(id=feedback_id)
+        logger.info("Retrieved feedback from db")
+        return r
+    except SQLAlchemyError as e:
+        logger.error("Could not retrieve results from db",
+                     id=feedback_id,
+                     error=e)
+
+
 # pylint: disable=maybe-no-member
 def merge(response):
     try:
@@ -118,6 +129,8 @@ def save_feedback_response(bound_logger, survey_feedback_response):
 
     try:
         db.session.add(feedback_response)
+        db.session.flush()
+        new_id = feedback_response.id
         db.session.commit()
     except IntegrityError as e:
         logger.error("Integrity error in database. Rolling back commit", error=e)
@@ -130,7 +143,7 @@ def save_feedback_response(bound_logger, survey_feedback_response):
     else:
         logger.info("Feedback response saved")
 
-    return invalid
+    return invalid, new_id
 
 
 def test_sql(connection):
@@ -174,16 +187,21 @@ def do_save_response():
 
     response_type = str(survey_response.get('type'))
 
+    result = {'tx_id': survey_response.get('tx_id')}
+
     if response_type.find("feedback") != -1:
         bound_logger = bound_logger.bind(response_type="feedback",
                                          survey_id=survey_response.get("survey_id"))
+        result['feedback'] = True
         try:
-            save_feedback_response(bound_logger, survey_response)
+            feedback = save_feedback_response(bound_logger, survey_response)
+            result['feedback_id'] = feedback[1]
         except IntegrityError:
             return server_error("Integrity error")
         except SQLAlchemyError:
             return server_error("Database error")
     else:
+        result['feedback'] = False
         try:
             metadata = survey_response['metadata']
         except KeyError:
@@ -205,7 +223,7 @@ def do_save_response():
         if invalid:
             return jsonify(invalid)
 
-    return jsonify(result="ok")
+    return jsonify(result)
 
 
 @app.route('/invalid-responses', methods=['GET'])
@@ -226,6 +244,27 @@ def do_get_responses():
         return jsonify({}), 404
 
 
+@app.route('/feedback/<feedback_id>', methods=['GET'])
+def do_get_feedback(feedback_id):
+    try:
+        int(feedback_id)
+    except ValueError:
+        raise InvalidUsageError("feedback_id supplied is not a valid id", 400)
+
+    result = get_feedback(feedback_id=feedback_id)
+
+    if result:
+        try:
+            response = jsonify(result[0].data)
+            response.headers['Content-MD5'] = hashlib.md5(response.data).hexdigest()
+            return response
+        except IndexError:
+            logger.info('Empty items list in result.')
+            return jsonify({}), 404
+    else:
+        return jsonify({}), 404
+
+
 @app.route('/responses/<tx_id>', methods=['GET'])
 def do_get_response(tx_id):
     try:
@@ -234,6 +273,7 @@ def do_get_response(tx_id):
         raise InvalidUsageError("tx_id supplied is not a valid UUID", 400)
 
     result = get_responses(tx_id=tx_id)
+    logger.info('result: {}'.format(result))
     if result:
         try:
             result_dict = object_as_dict(result.items[0])['data']

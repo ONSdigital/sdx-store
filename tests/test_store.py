@@ -10,7 +10,7 @@ import testing.postgresql
 
 import settings
 from tests.test_data import invalid_message, test_message, second_test_message, missing_tx_id_message
-from tests.test_data import test_feedback_message, invalid_feedback_message
+from tests.test_data import test_feedback_message, invalid_feedback_message, feedback_id_tag, feedback_decrypted
 
 import server
 from server import db, InvalidUsageError, logger
@@ -35,7 +35,8 @@ class TestStoreService(unittest.TestCase):
         'invalid': '/invalid-responses',
         'queue': '/queue',
         'healthcheck': '/healthcheck',
-        'old': '/responses/old'
+        'old': '/responses/old',
+        'feedback': '/feedback'
     }
 
     logger = wrap_logger(logging.getLogger("TEST"))
@@ -45,6 +46,10 @@ class TestStoreService(unittest.TestCase):
     test_message_sorted = json.dumps(test_message_json,
                                      sort_keys=True,
                                      separators=(',', ':')) + '\n'
+
+    feedback_decrypted_json = json.loads(feedback_decrypted)
+
+    feedback_id_tag_json = json.loads(feedback_id_tag)
 
     def setUp(self):
         self.app = server.app.test_client()
@@ -114,6 +119,36 @@ class TestStoreService(unittest.TestCase):
                           content_type='application/json')
         assert r.status_code == 200
         assert r.data == b'true\n'
+
+    # feedback_id tag change to 1 instead of 123
+
+    # /feedback/<feedback_id> GET
+    def test_get_feedback_ID_400_if_not_a_valid_INT(self):
+        """Endpoint should return 400 if the feedback_ID is not a valid int"""
+        r = self.app.get(self.endpoints['feedback'] + '/1s')
+        assert r.status_code == 400
+
+    def test_get_feedback_ID_404_if_ID_not_stored(self):
+        """Endpoint should return 404 if the feedback_ID is not stored"""
+        r = self.app.get(self.endpoints['feedback'] + '/1')
+        assert r.status_code == 404
+
+    def test_get_feedback_id_returns_valid_id_and_200(self):
+        """Posts a valid feedback and calls a feedback end point GET to check stored tx_id"""
+        expected_id = self.feedback_decrypted_json['tx_id']
+
+        self.app.post(self.endpoints['responses'],
+                      data=feedback_decrypted,
+                      content_type='application/json')
+
+        r = self.app.get(self.endpoints['feedback'] + '/' + '1')
+        i = json.loads(r.data).get('tx_id')
+
+        self.assertEqual(i, expected_id)
+        self.assertEqual(r.status_code, 200)
+
+        db.session.remove()
+        db.drop_all()
 
     # /responses/<tx_id> GET
     def test_get_id_returns_400_if_not_a_valid_uuid(self):
