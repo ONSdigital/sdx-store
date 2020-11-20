@@ -171,6 +171,6 @@ feedback_decrypted = '''
 }
 '''
 
-feedback_id_tag = '{"tx_id": "0f534ffc-9442-414c-b39f-a756b4adc6cb","feedback":true,"feedback_id":1}'
+store_response_json_feedback = '{"tx_id": "0f534ffc-9442-414c-b39f-a756b4adc6cb","feedback":true,"feedback_id":1}'
 
-valid_id_tag = '{"tx_id": "0f534ffc-9442-414c-b39f-a756b4adc6cb","feedback":false}'
+store_response_json = '{"tx_id": "0f534ffc-9442-414c-b39f-a756b4adc6cb","feedback":false}'
