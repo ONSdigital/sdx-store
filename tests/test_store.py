@@ -10,7 +10,7 @@ import testing.postgresql
 
 import settings
 from tests.test_data import invalid_message, test_message, second_test_message, missing_tx_id_message
-from tests.test_data import test_feedback_message, invalid_feedback_message, feedback_id_tag, feedback_decrypted
+from tests.test_data import test_feedback_message, invalid_feedback_message, store_response_json_feedback, feedback_decrypted
 
 import server
 from server import db, InvalidUsageError, logger
@@ -49,7 +49,7 @@ class TestStoreService(unittest.TestCase):
 
     feedback_decrypted_json = json.loads(feedback_decrypted)
 
-    feedback_id_tag_json = json.loads(feedback_id_tag)
+    feedback_id_tag_json = json.loads(store_response_json_feedback)
 
     def setUp(self):
         self.app = server.app.test_client()

@@ -1,6 +1,6 @@
 ### Unreleased
 
-### 3.12.3 2020-11-5
+### 3.15.0 2020-11-20
   - automated feedback changes implemented.
   - feedback/<feedback_id> GET end point added and tested
 
