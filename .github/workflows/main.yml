@@ -1,0 +1,50 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+    name: Build and Package
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: sdx
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: install packages
+      run: pip install --upgrade pip
+
+    - name: make build
+      run: |
+        make build
+        pip install -r test_requirements.txt
+        pip install codecov
+
+    - name: postgres set-up
+      run: |
+        psql -c 'create database test;' -U postgres
+        psql -c "grant all privileges on database test to postgres;" -U postgres
+
+    - name: run tests
+      run: |
+        flake8 --exclude lib
+        pytest -v tests/ --cov=server --cov-report html
+
+    - name: get coverage
+      run: |
+        codecov
+
+
